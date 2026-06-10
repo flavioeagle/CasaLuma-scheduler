@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://gvkkzdzfjiafpjkyscjn.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2a2t6ZHpmamlhZnBqa3lzY2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjQxNDMsImV4cCI6MjA1OTY0MDE0M30.9NjNSivX_LhbVv3IHpkxPHeAKxT6s7sFLBgG9sCH51g";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2a2t6ZHpmamlhZnBqa3lzY2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODM0MTUsImV4cCI6MjA4NzM1OTQxNX0.DUSrbbqced4HgC0HOAaJ2ERPDHc7gYFiHHHBPDEB1Zg";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const ROLES = { ADMIN: "admin", INSTALLER: "installer" };
