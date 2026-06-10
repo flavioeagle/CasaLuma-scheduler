@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = "https://gvkkzdzfjiafpjkyscjn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2a2t6ZHpmamlhZnBqa3lzY2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODM0MTUsImV4cCI6MjA4NzM1OTQxNX0.DUSrbbqced4HgC0HOAaJ2ERPDHc7gYFiHHHBPDEB1Zg";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const ADMIN_PASSWORD = "casaluma2026";
+const OWNER_PASSWORD = "Faf1022@";
 
 const STATUS_CONFIG = {
   scheduled:   { label: "Agendado",     color: "#B8924A", bg: "#FDF6EC" },
@@ -22,35 +22,24 @@ const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const DAYS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
+function todayStr() { return new Date().toISOString().split("T")[0]; }
 function formatDate(d) {
   if (!d) return "";
   const [y,m,day] = d.split("-");
   return `${day}/${m}/${y}`;
 }
 
-function todayStr() {
-  return new Date().toISOString().split("T")[0];
-}
-
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status]||STATUS_CONFIG.scheduled;
-  return (
-    <span style={{background:cfg.bg,color:cfg.color,border:`1px solid ${cfg.color}33`,
-      borderRadius:20,padding:"3px 12px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>
-      {cfg.label}
-    </span>
-  );
+  return <span style={{background:cfg.bg,color:cfg.color,border:`1px solid ${cfg.color}33`,
+    borderRadius:20,padding:"3px 12px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>{cfg.label}</span>;
 }
 
 function PhoneButton({ phone, label, color="#B8924A" }) {
   if (!phone) return null;
-  return (
-    <a href={`tel:${phone.replace(/\D/g,"")}`} style={{
-      display:"inline-flex",alignItems:"center",gap:6,
-      background:color+"18",color,border:`1px solid ${color}44`,
-      borderRadius:20,padding:"6px 16px",fontSize:13,fontWeight:700,textDecoration:"none",
-    }}>📞 {label}: {phone}</a>
-  );
+  return <a href={`tel:${phone.replace(/\D/g,"")}`} style={{display:"inline-flex",alignItems:"center",gap:6,
+    background:color+"18",color,border:`1px solid ${color}44`,borderRadius:20,padding:"6px 16px",
+    fontSize:13,fontWeight:700,textDecoration:"none"}}>📞 {label}: {phone}</a>;
 }
 
 function SectionTitle({ children }) {
@@ -65,11 +54,8 @@ function FormField({ label, value, onChange, type="text", multiline, placeholder
     <div style={{marginBottom:14}}>
       <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>{label}</label>
       {multiline
-        ? <textarea value={value} onChange={e=>onChange(e.target.value)} rows={3}
-            placeholder={placeholder} style={{...base,resize:"vertical"}}/>
-        : <input type={type} value={value} onChange={e=>onChange(e.target.value)}
-            placeholder={placeholder} style={base}/>
-      }
+        ? <textarea value={value} onChange={e=>onChange(e.target.value)} rows={3} placeholder={placeholder} style={{...base,resize:"vertical"}}/>
+        : <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={base}/>}
     </div>
   );
 }
@@ -78,180 +64,425 @@ function FormField({ label, value, onChange, type="text", multiline, placeholder
 function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState(null);
   const [password, setPassword] = useState("");
-  const [installerName, setInstallerName] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [admins, setAdmins] = useState([]);
   const [installers, setInstallers] = useState([]);
 
   useEffect(() => {
-    supabase.from("installers").select("name").order("name").then(({data}) => {
-      if (data) setInstallers(data.map(i=>i.name));
-    });
+    supabase.from("admins").select("name,company").order("name").then(({data})=>{ if(data) setAdmins(data); });
+    supabase.from("installers").select("name").order("name").then(({data})=>{ if(data) setInstallers(data.map(i=>i.name)); });
   }, []);
 
-  const handleAdmin = () => {
-    if (password === ADMIN_PASSWORD) onLogin({role:"admin",name:"Admin"});
-    else setError("Senha incorreta.");
-  };
-
-  const handleInstaller = async () => {
-    if (!installerName) { setError("Selecione seu nome."); return; }
+  const handle = async () => {
+    if (mode==="owner") {
+      if (password===OWNER_PASSWORD) onLogin({role:"owner",name:"Owner"});
+      else setError("Senha incorreta.");
+      return;
+    }
+    if (!name) { setError("Selecione seu nome."); return; }
     if (!password) { setError("Digite sua senha."); return; }
     setLoading(true);
-    const {data,error:err} = await supabase.from("installers").select("*")
-      .eq("name",installerName).eq("password",password).single();
-    setLoading(false);
-    if (err||!data) { setError("Nome ou senha incorretos."); return; }
-    onLogin({role:"installer",name:data.name,id:data.id});
+    if (mode==="admin") {
+      const {data,error:err} = await supabase.from("admins").select("*").eq("name",name).eq("password",password).single();
+      setLoading(false);
+      if (err||!data) { setError("Nome ou senha incorretos."); return; }
+      onLogin({role:"admin",name:data.name,company:data.company,id:data.id});
+    } else {
+      const {data,error:err} = await supabase.from("installers").select("*").eq("name",name).eq("password",password).single();
+      setLoading(false);
+      if (err||!data) { setError("Nome ou senha incorretos."); return; }
+      onLogin({role:"installer",name:data.name,company:data.company,id:data.id});
+    }
   };
 
   if (!mode) return (
-    <div style={{minHeight:"100vh",background:"#1A1A1A",display:"flex",
-      alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",padding:20}}>
+    <div style={{minHeight:"100vh",background:"#1A1A1A",display:"flex",alignItems:"center",
+      justifyContent:"center",fontFamily:"'Inter',sans-serif",padding:20}}>
       <div style={{textAlign:"center",maxWidth:360,width:"100%"}}>
         <div style={{fontSize:38,fontWeight:900,color:"#B8924A",letterSpacing:-2,marginBottom:2}}>CasaLuma</div>
         <div style={{fontSize:11,color:"#555",letterSpacing:3,textTransform:"uppercase",marginBottom:44}}>Field Scheduler</div>
-        <div style={{fontSize:15,color:"#aaa",marginBottom:22}}>Como você está acessando?</div>
-        <div style={{display:"flex",flexDirection:"column",gap:14}}>
-          <button onClick={()=>{setMode("admin");setError("");setPassword("");}} style={{
-            background:"#B8924A",color:"#fff",border:"none",borderRadius:14,
-            padding:"20px 24px",fontSize:16,fontWeight:800,cursor:"pointer",
-            boxShadow:"0 8px 30px rgba(184,146,74,0.35)"}}>
-            <div>⚙️ Admin</div>
-            <div style={{fontSize:12,fontWeight:400,opacity:0.85,marginTop:4}}>Gerenciar todos os jobs</div>
-          </button>
-          <button onClick={()=>{setMode("installer");setError("");setPassword("");}} style={{
-            background:"#2A2A2A",color:"#fff",border:"2px solid #3A3A3A",
-            borderRadius:14,padding:"20px 24px",fontSize:16,fontWeight:800,cursor:"pointer"}}>
-            <div>🔨 Instalador</div>
-            <div style={{fontSize:12,fontWeight:400,opacity:0.6,marginTop:4}}>Ver meus jobs</div>
-          </button>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {[
+            {id:"owner",icon:"👑",label:"Owner",sub:"Acesso total ao sistema"},
+            {id:"admin",icon:"⚙️",label:"Admin",sub:"Gerenciar minha empresa"},
+            {id:"installer",icon:"🔨",label:"Instalador",sub:"Ver meus jobs"},
+          ].map(m=>(
+            <button key={m.id} onClick={()=>{setMode(m.id);setError("");setPassword("");setName("");}} style={{
+              background:m.id==="owner"?"#1A1A1A":"#2A2A2A",color:"#fff",
+              border:m.id==="owner"?"2px solid #B8924A":"2px solid #3A3A3A",
+              borderRadius:14,padding:"18px 24px",fontSize:15,fontWeight:800,cursor:"pointer",
+              textAlign:"left",display:"flex",alignItems:"center",gap:14}}>
+              <span style={{fontSize:24}}>{m.icon}</span>
+              <div>
+                <div style={{color:m.id==="owner"?"#B8924A":"#fff"}}>{m.label}</div>
+                <div style={{fontSize:12,fontWeight:400,opacity:0.6,marginTop:2}}>{m.sub}</div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
     </div>
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#1A1A1A",display:"flex",
-      alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",padding:20}}>
+    <div style={{minHeight:"100vh",background:"#1A1A1A",display:"flex",alignItems:"center",
+      justifyContent:"center",fontFamily:"'Inter',sans-serif",padding:20}}>
       <div style={{maxWidth:360,width:"100%"}}>
         <div style={{fontSize:38,fontWeight:900,color:"#B8924A",letterSpacing:-2,marginBottom:2,textAlign:"center"}}>CasaLuma</div>
         <div style={{fontSize:11,color:"#555",letterSpacing:3,textTransform:"uppercase",marginBottom:32,textAlign:"center"}}>
-          {mode==="admin"?"Login Admin":"Login Instalador"}
+          {mode==="owner"?"Login Owner":mode==="admin"?"Login Admin":"Login Instalador"}
         </div>
         <div style={{background:"#2A2A2A",borderRadius:16,padding:24}}>
-          {mode==="installer" && (
+          {(mode==="admin"||mode==="installer") && (
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,color:"#aaa",fontWeight:700,display:"block",marginBottom:8}}>Seu nome</label>
-              <select value={installerName} onChange={e=>{setInstallerName(e.target.value);setError("");}}
+              <select value={name} onChange={e=>{setName(e.target.value);setError("");}}
                 style={{width:"100%",border:"1px solid #444",borderRadius:8,padding:"10px 12px",
                   fontSize:14,background:"#1A1A1A",color:"#fff",boxSizing:"border-box"}}>
                 <option value="">Selecione...</option>
-                {installers.map(n=><option key={n} value={n}>{n}</option>)}
+                {(mode==="admin"?admins.map(a=>a.name):installers).map(n=><option key={n} value={n}>{n}</option>)}
               </select>
             </div>
           )}
           <div style={{marginBottom:16}}>
             <label style={{fontSize:12,color:"#aaa",fontWeight:700,display:"block",marginBottom:8}}>Senha</label>
             <input type="password" value={password} onChange={e=>{setPassword(e.target.value);setError("");}}
-              placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(mode==="admin"?handleAdmin():handleInstaller())}
+              placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&handle()}
               style={{width:"100%",border:"1px solid #444",borderRadius:8,padding:"10px 12px",
                 fontSize:14,background:"#1A1A1A",color:"#fff",boxSizing:"border-box",outline:"none"}}/>
           </div>
           {error && <div style={{color:"#DC2626",fontSize:13,marginBottom:12,fontWeight:600}}>{error}</div>}
-          <button onClick={mode==="admin"?handleAdmin:handleInstaller} disabled={loading} style={{
-            width:"100%",background:"#B8924A",color:"#fff",border:"none",
-            borderRadius:10,padding:13,fontWeight:800,fontSize:15,cursor:"pointer",
+          <button onClick={handle} disabled={loading} style={{width:"100%",background:"#B8924A",color:"#fff",
+            border:"none",borderRadius:10,padding:13,fontWeight:800,fontSize:15,cursor:"pointer",
             opacity:loading?0.7:1,marginBottom:12}}>
             {loading?"Verificando...":"Entrar"}
           </button>
-          <button onClick={()=>{setMode(null);setError("");setPassword("");}} style={{
-            width:"100%",background:"none",color:"#666",border:"1px solid #444",
-            borderRadius:10,padding:10,cursor:"pointer",fontSize:13}}>← Voltar</button>
+          <button onClick={()=>{setMode(null);setError("");}} style={{width:"100%",background:"none",
+            color:"#666",border:"1px solid #444",borderRadius:10,padding:10,cursor:"pointer",fontSize:13}}>← Voltar</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── CALENDAR VIEW ────────────────────────────────────────────────────
+// ─── ADMIN MANAGER (Owner only) ──────────────────────────────────────
+function AdminManager({ onClose }) {
+  const [admins, setAdmins] = useState([]);
+  const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const load = async () => {
+    const {data} = await supabase.from("admins").select("*").order("company");
+    if (data) setAdmins(data);
+  };
+  useEffect(()=>{ load(); },[]);
+
+  const add = async () => {
+    if (!name||!company||!password) { setMsg("Preencha todos os campos."); return; }
+    setSaving(true);
+    const {error} = await supabase.from("admins").insert([{name,company,password}]);
+    setSaving(false);
+    if (error) { setMsg("Erro: nome já existe."); return; }
+    setName(""); setCompany(""); setPassword("");
+    setMsg("Admin cadastrado!"); load();
+    setTimeout(()=>setMsg(""),3000);
+  };
+
+  const remove = async (id,n) => {
+    if (!confirm(`Remover admin "${n}"?`)) return;
+    await supabase.from("admins").delete().eq("id",id);
+    load();
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"#00000077",display:"flex",
+      alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
+      <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",
+        maxWidth:480,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div style={{fontSize:17,fontWeight:800}}>⚙️ Gerenciar Admins</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#666"}}>×</button>
+        </div>
+        {msg && <div style={{background:msg.includes("Erro")?"#FEF2F2":"#F0FDF4",
+          color:msg.includes("Erro")?"#DC2626":"#16A34A",
+          borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:700,marginBottom:14}}>{msg}</div>}
+        <div style={{background:"#F9F7F4",borderRadius:12,padding:16,marginBottom:20}}>
+          <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Novo Admin</div>
+          <FormField label="Nome do Admin" value={name} onChange={setName} placeholder="Ex: John"/>
+          <FormField label="Empresa" value={company} onChange={setCompany} placeholder="Ex: CasaLuma Group"/>
+          <FormField label="Senha" value={password} onChange={setPassword} type="password" placeholder="Senha de acesso"/>
+          <button onClick={add} disabled={saving} style={{width:"100%",background:"#B8924A",color:"#fff",
+            border:"none",borderRadius:8,padding:11,fontWeight:700,cursor:"pointer",fontSize:13}}>
+            {saving?"Salvando...":"+ Adicionar"}
+          </button>
+        </div>
+        <div style={{fontSize:12,fontWeight:800,color:"#666",marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>
+          Admins cadastrados ({admins.length})
+        </div>
+        {admins.map(a=>(
+          <div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"12px 14px",background:"#F9F7F4",borderRadius:10,marginBottom:8}}>
+            <div>
+              <div style={{fontSize:14,fontWeight:700}}>{a.name}</div>
+              <div style={{fontSize:12,color:"#888"}}>🏢 {a.company}</div>
+            </div>
+            <button onClick={()=>remove(a.id,a.name)} style={{background:"#FEF2F2",color:"#DC2626",
+              border:"1px solid #DC262633",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer",fontWeight:700}}>
+              Remover
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── INSTALLER MANAGER ───────────────────────────────────────────────
+function InstallerManager({ session, onClose }) {
+  const [installers, setInstallers] = useState([]);
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const company = session.role==="owner" ? null : session.company;
+
+  const load = async () => {
+    let q = supabase.from("installers").select("*").order("name");
+    if (company) q = q.eq("company",company);
+    const {data} = await q;
+    if (data) setInstallers(data);
+  };
+  useEffect(()=>{ load(); },[]);
+
+  const add = async () => {
+    if (!name||!password) { setMsg("Preencha nome e senha."); return; }
+    setSaving(true);
+    const insertCompany = company || "Owner";
+    const {error} = await supabase.from("installers").insert([{name,password,company:insertCompany}]);
+    setSaving(false);
+    if (error) { setMsg("Erro: nome já existe."); return; }
+    setName(""); setPassword(""); setMsg("Instalador cadastrado!"); load();
+    setTimeout(()=>setMsg(""),3000);
+  };
+
+  const remove = async (id,n) => {
+    if (!confirm(`Remover instalador "${n}"?`)) return;
+    await supabase.from("installers").delete().eq("id",id);
+    load();
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"#00000077",display:"flex",
+      alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
+      <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",
+        maxWidth:480,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div style={{fontSize:17,fontWeight:800}}>👷 Instaladores{company?` — ${company}`:""}</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#666"}}>×</button>
+        </div>
+        {msg && <div style={{background:msg.includes("Erro")?"#FEF2F2":"#F0FDF4",
+          color:msg.includes("Erro")?"#DC2626":"#16A34A",
+          borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:700,marginBottom:14}}>{msg}</div>}
+        <div style={{background:"#F9F7F4",borderRadius:12,padding:16,marginBottom:20}}>
+          <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Novo Instalador</div>
+          <FormField label="Nome" value={name} onChange={setName} placeholder="Ex: Alberth"/>
+          <FormField label="Senha" value={password} onChange={setPassword} type="password" placeholder="Senha de acesso"/>
+          <button onClick={add} disabled={saving} style={{width:"100%",background:"#B8924A",color:"#fff",
+            border:"none",borderRadius:8,padding:11,fontWeight:700,cursor:"pointer",fontSize:13}}>
+            {saving?"Salvando...":"+ Adicionar"}
+          </button>
+        </div>
+        <div style={{fontSize:12,fontWeight:800,color:"#666",marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>
+          Cadastrados ({installers.length})
+        </div>
+        {installers.map(inst=>(
+          <div key={inst.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"12px 14px",background:"#F9F7F4",borderRadius:10,marginBottom:8}}>
+            <div>
+              <div style={{fontSize:14,fontWeight:700}}>{inst.name}</div>
+              {session.role==="owner"&&<div style={{fontSize:12,color:"#888"}}>🏢 {inst.company}</div>}
+            </div>
+            <button onClick={()=>remove(inst.id,inst.name)} style={{background:"#FEF2F2",color:"#DC2626",
+              border:"1px solid #DC262633",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer",fontWeight:700}}>
+              Remover
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── JOB FORM (create + edit) ─────────────────────────────────────────
+function JobForm({ onSave, onCancel, saving, installerNames, initial }) {
+  const [form, setForm] = useState(initial || {
+    work_order:"",client:"",client_phone:"",address:"",access_notes:"",
+    date:"",time:"08:00",service:SERVICES[0],status:"scheduled",
+    assigned_to:"",installer_phone:"",estimated_hours:4,scope:"",
+    square_footage:"",builder:"",
+  });
+  const set = k => v => setForm(f=>({...f,[k]:v}));
+  const isEdit = !!initial;
+
+  const save = () => {
+    if (!form.work_order||!form.client||!form.address||!form.date) {
+      alert("Preencha: Nº do Trabalho, Cliente, Endereço e Data."); return;
+    }
+    onSave({...form, square_footage: form.square_footage ? Number(form.square_footage) : null});
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"#00000077",display:"flex",
+      alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
+      <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",
+        maxWidth:560,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{fontSize:17,fontWeight:800,marginBottom:20}}>{isEdit?"✏️ Editar Job":"➕ Novo Job"}</div>
+        <FormField label="Nº do Trabalho *" value={form.work_order} onChange={set("work_order")} placeholder="WO-2026-001"/>
+        <div style={{display:"flex",gap:12}}>
+          <div style={{flex:1}}><FormField label="Cliente *" value={form.client} onChange={set("client")} placeholder="John Smith"/></div>
+          <div style={{flex:1}}><FormField label="Tel. Cliente" value={form.client_phone} onChange={set("client_phone")} placeholder="(770) 555-0000" type="tel"/></div>
+        </div>
+        <FormField label="Builder / Empresa" value={form.builder||""} onChange={set("builder")} placeholder="Brown Haven Homes"/>
+        <FormField label="Endereço *" value={form.address} onChange={set("address")} placeholder="123 Main St, Marietta, GA"/>
+        <FormField label="Instruções de Acesso" value={form.access_notes||""} onChange={set("access_notes")} multiline placeholder="Código do portão, onde estacionar..."/>
+        <div style={{display:"flex",gap:12}}>
+          <div style={{flex:1}}><FormField label="Data *" value={form.date} onChange={set("date")} type="date"/></div>
+          <div style={{flex:1}}><FormField label="Horário" value={form.time} onChange={set("time")} type="time"/></div>
+        </div>
+        <div style={{display:"flex",gap:12}}>
+          <div style={{flex:2,marginBottom:14}}>
+            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Serviço</label>
+            <select value={form.service} onChange={e=>setForm(f=>({...f,service:e.target.value}))}
+              style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff"}}>
+              {SERVICES.map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div style={{flex:1}}><FormField label="SF" value={form.square_footage||""} onChange={set("square_footage")} type="number" placeholder="88"/></div>
+        </div>
+        <div style={{display:"flex",gap:12}}>
+          <div style={{flex:1,marginBottom:14}}>
+            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Instalador</label>
+            <select value={form.assigned_to||""} onChange={e=>setForm(f=>({...f,assigned_to:e.target.value}))}
+              style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff"}}>
+              <option value="">Selecione...</option>
+              {installerNames.map(n=><option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div style={{flex:1}}><FormField label="Tel. Instalador" value={form.installer_phone||""} onChange={set("installer_phone")} placeholder="(470) 555-0000" type="tel"/></div>
+        </div>
+        <div style={{display:"flex",gap:12}}>
+          <div style={{flex:1}}><FormField label="Horas est." value={form.estimated_hours||4} onChange={set("estimated_hours")} type="number"/></div>
+          <div style={{flex:1,marginBottom:14}}>
+            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Status</label>
+            <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}
+              style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff"}}>
+              {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <FormField label="Escopo" value={form.scope||""} onChange={set("scope")} multiline placeholder="Descreva o trabalho..."/>
+        <div style={{display:"flex",gap:12,marginTop:20}}>
+          <button onClick={save} disabled={saving} style={{flex:1,background:"#B8924A",color:"#fff",border:"none",
+            borderRadius:10,padding:13,fontWeight:800,fontSize:14,cursor:saving?"not-allowed":"pointer",opacity:saving?0.7:1}}>
+            {saving?"Salvando...":isEdit?"Salvar Alterações":"Criar Job"}
+          </button>
+          <button onClick={onCancel} style={{background:"#F3F4F6",color:"#374151",border:"none",
+            borderRadius:10,padding:"13px 20px",cursor:"pointer",fontSize:14}}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PHOTO COMPONENTS ────────────────────────────────────────────────
+function PhotoGrid({ photos, onDelete, canDelete }) {
+  return (
+    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>
+      {photos.map((p,i)=>(
+        <div key={i} style={{position:"relative"}}>
+          <img src={p.url} alt="" onClick={()=>window.open(p.url,"_blank")}
+            style={{width:90,height:70,objectFit:"cover",borderRadius:8,border:"2px solid #e5e7eb",cursor:"pointer"}}/>
+          {canDelete && (
+            <button onClick={()=>onDelete(p)} style={{position:"absolute",top:-6,right:-6,background:"#DC2626",
+              color:"#fff",border:"none",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900}}>×</button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PhotoUploadBtn({ onAdd, uploading }) {
+  const ref = useRef();
+  return (
+    <>
+      <button onClick={()=>ref.current.click()} disabled={uploading} style={{width:90,height:70,
+        border:"2px dashed #B8924A",borderRadius:8,background:"#FFFBF5",color:"#B8924A",
+        fontSize:uploading?14:22,cursor:uploading?"not-allowed":"pointer",marginTop:8,
+        display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {uploading?"...":"+"}
+      </button>
+      <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}}
+        onChange={e=>Array.from(e.target.files).forEach(f=>onAdd(f))}/>
+    </>
+  );
+}
+
+// ─── CALENDAR ────────────────────────────────────────────────────────
 function CalendarView({ jobs, onSelectJob }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState(todayStr());
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const firstDay = new Date(year,month,1).getDay();
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  const todayFull = todayStr();
 
   const jobsByDate = {};
-  jobs.forEach(j => {
-    if (j.date) {
-      if (!jobsByDate[j.date]) jobsByDate[j.date] = [];
-      jobsByDate[j.date].push(j);
-    }
-  });
+  jobs.forEach(j=>{ if(j.date){ if(!jobsByDate[j.date]) jobsByDate[j.date]=[]; jobsByDate[j.date].push(j); }});
 
-  const prevMonth = () => {
-    if (month===0) { setMonth(11); setYear(y=>y-1); }
-    else setMonth(m=>m-1);
-  };
-  const nextMonth = () => {
-    if (month===11) { setMonth(0); setYear(y=>y+1); }
-    else setMonth(m=>m+1);
-  };
+  const prevMonth = () => { if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
+  const nextMonth = () => { if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); };
 
   const selectedJobs = jobsByDate[selectedDay]||[];
-  const todayFull = todayStr();
 
   return (
     <div>
-      {/* Month nav */}
       <div style={{background:"#1A1A1A",borderRadius:14,padding:"16px 20px",marginBottom:14}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <button onClick={prevMonth} style={{background:"#2A2A2A",border:"none",color:"#B8924A",
             borderRadius:8,padding:"6px 14px",fontSize:18,cursor:"pointer"}}>‹</button>
-          <div style={{color:"#fff",fontWeight:800,fontSize:16}}>
-            {MONTHS[month]} {year}
-          </div>
+          <div style={{color:"#fff",fontWeight:800,fontSize:16}}>{MONTHS[month]} {year}</div>
           <button onClick={nextMonth} style={{background:"#2A2A2A",border:"none",color:"#B8924A",
             borderRadius:8,padding:"6px 14px",fontSize:18,cursor:"pointer"}}>›</button>
         </div>
-
-        {/* Day headers */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
-          {DAYS.map(d=>(
-            <div key={d} style={{textAlign:"center",fontSize:10,color:"#666",fontWeight:700,padding:"4px 0"}}>
-              {d}
-            </div>
-          ))}
+          {DAYS.map(d=><div key={d} style={{textAlign:"center",fontSize:10,color:"#666",fontWeight:700,padding:"4px 0"}}>{d}</div>)}
         </div>
-
-        {/* Days grid */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
-          {Array(firstDay).fill(null).map((_,i)=>(
-            <div key={`e${i}`}/>
-          ))}
+          {Array(firstDay).fill(null).map((_,i)=><div key={`e${i}`}/>)}
           {Array(daysInMonth).fill(null).map((_,i)=>{
-            const day = i+1;
-            const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-            const dayJobs = jobsByDate[dateStr]||[];
-            const isToday = dateStr===todayFull;
-            const isSelected = dateStr===selectedDay;
-            const hasJobs = dayJobs.length>0;
-
+            const day=i+1;
+            const dateStr=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+            const dayJobs=jobsByDate[dateStr]||[];
+            const isToday=dateStr===todayFull;
+            const isSelected=dateStr===selectedDay;
             return (
               <button key={day} onClick={()=>setSelectedDay(dateStr)} style={{
-                background: isSelected?"#B8924A": isToday?"#2A2A2A":"transparent",
-                border: isToday&&!isSelected?"1px solid #B8924A44":"none",
+                background:isSelected?"#B8924A":isToday?"#2A2A2A":"transparent",
+                border:isToday&&!isSelected?"1px solid #B8924A44":"none",
                 borderRadius:8,padding:"6px 2px",cursor:"pointer",
-                display:"flex",flexDirection:"column",alignItems:"center",gap:2,
-              }}>
+                display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                 <span style={{fontSize:13,fontWeight:isToday||isSelected?800:400,
-                  color:isSelected?"#fff":isToday?"#B8924A":"#ccc"}}>
-                  {day}
-                </span>
-                {hasJobs && (
+                  color:isSelected?"#fff":isToday?"#B8924A":"#ccc"}}>{day}</span>
+                {dayJobs.length>0&&(
                   <div style={{display:"flex",gap:2,flexWrap:"wrap",justifyContent:"center"}}>
                     {dayJobs.slice(0,3).map((j,idx)=>{
                       const cfg=STATUS_CONFIG[j.status]||STATUS_CONFIG.scheduled;
@@ -264,254 +495,46 @@ function CalendarView({ jobs, onSelectJob }) {
           })}
         </div>
       </div>
-
-      {/* Selected day jobs */}
-      <div style={{marginBottom:8}}>
-        <div style={{fontSize:13,fontWeight:800,color:"#1A1A1A",marginBottom:10}}>
-          📅 {formatDate(selectedDay)}
-          <span style={{color:"#999",fontWeight:400,marginLeft:8}}>
-            {selectedJobs.length===0?"Sem jobs":""+selectedJobs.length+" job(s)"}
-          </span>
-        </div>
-        {selectedJobs.length===0 ? (
-          <div style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",
-            padding:"24px",textAlign:"center",color:"#bbb",fontSize:13}}>
-            Nenhum job neste dia
-          </div>
-        ) : (
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{fontSize:13,fontWeight:800,color:"#1A1A1A",marginBottom:10}}>
+        📅 {formatDate(selectedDay)}
+        <span style={{color:"#999",fontWeight:400,marginLeft:8}}>{selectedJobs.length===0?"Sem jobs":`${selectedJobs.length} job(s)`}</span>
+      </div>
+      {selectedJobs.length===0
+        ? <div style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",padding:"24px",textAlign:"center",color:"#bbb",fontSize:13}}>Nenhum job neste dia</div>
+        : <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {selectedJobs.map(job=>{
               const cfg=STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
               return (
-                <div key={job.id} onClick={()=>onSelectJob(job)} style={{
-                  background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",
-                  borderLeft:`4px solid ${cfg.color}`,padding:"14px 16px",cursor:"pointer",
-                  boxShadow:"0 2px 8px rgba(0,0,0,0.04)",
-                }}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                    <div style={{flex:1}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
-                        <span style={{fontSize:11,fontWeight:800,color:"#B8924A",letterSpacing:1}}>{job.work_order}</span>
-                        <StatusBadge status={job.status}/>
-                      </div>
-                      <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
-                      {job.builder && <div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
-                      <div style={{fontSize:13,color:"#666",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                        📍 {job.address}
-                      </div>
-                      <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                        <span style={{fontSize:12,color:"#999"}}>🕐 {job.time}</span>
-                        <span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>
-                        {job.square_footage&&<span style={{fontSize:12,color:"#999",fontWeight:700}}>{job.square_footage} SF</span>}
-                        {job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}
-                      </div>
-                    </div>
+                <div key={job.id} onClick={()=>onSelectJob(job)} style={{background:"#fff",borderRadius:12,
+                  border:"1px solid #E5E7EB",borderLeft:`4px solid ${cfg.color}`,
+                  padding:"14px 16px",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span>
+                    <StatusBadge status={job.status}/>
+                    {job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}
+                  </div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
+                  {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
+                  <div style={{fontSize:13,color:"#666",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    <span style={{fontSize:12,color:"#999"}}>🕐 {job.time}</span>
+                    <span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>
+                    {job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}
                   </div>
                 </div>
               );
             })}
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── PHOTO GRID ───────────────────────────────────────────────────────
-function PhotoGrid({ photos, onDelete, canDelete }) {
-  return (
-    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>
-      {photos.map((p,i)=>(
-        <div key={i} style={{position:"relative"}}>
-          <img src={p.url||p} alt="" onClick={()=>window.open(p.url||p,"_blank")}
-            style={{width:90,height:70,objectFit:"cover",borderRadius:8,
-              border:"2px solid #e5e7eb",cursor:"pointer"}}/>
-          {canDelete && (
-            <button onClick={()=>onDelete(p)} style={{
-              position:"absolute",top:-6,right:-6,background:"#DC2626",color:"#fff",
-              border:"none",borderRadius:"50%",width:20,height:20,fontSize:12,
-              cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
-              fontWeight:900,lineHeight:1}}>×</button>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PhotoUploadBtn({ onAdd, uploading }) {
-  const ref = useRef();
-  return (
-    <>
-      <button onClick={()=>ref.current.click()} disabled={uploading} style={{
-        width:90,height:70,border:"2px dashed #B8924A",borderRadius:8,
-        background:"#FFFBF5",color:"#B8924A",fontSize:uploading?14:22,
-        cursor:uploading?"not-allowed":"pointer",marginTop:8,
-        display:"flex",alignItems:"center",justifyContent:"center"}}>
-        {uploading?"...":"+"}
-      </button>
-      <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}}
-        onChange={e=>Array.from(e.target.files).forEach(f=>onAdd(f))}/>
-    </>
-  );
-}
-
-// ─── JOB FORM ────────────────────────────────────────────────────────
-function JobForm({ onSave, onCancel, saving, installerNames }) {
-  const [form, setForm] = useState({
-    work_order:"",client:"",client_phone:"",address:"",access_notes:"",
-    date:"",time:"08:00",service:SERVICES[0],status:"scheduled",
-    assigned_to:"",installer_phone:"",estimated_hours:4,scope:"",
-    square_footage:"",builder:"",
-  });
-  const set = k => v => setForm(f=>({...f,[k]:v}));
-
-  const save = () => {
-    if (!form.work_order||!form.client||!form.address||!form.date) {
-      alert("Preencha: Nº do Trabalho, Cliente, Endereço e Data."); return;
-    }
-    onSave({...form, square_footage: form.square_footage ? Number(form.square_footage) : null});
-  };
-
-  return (
-    <div style={{position:"fixed",inset:0,background:"#00000077",
-      display:"flex",alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
-      <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",
-        maxWidth:560,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-        <div style={{fontSize:17,fontWeight:800,marginBottom:20}}>➕ Novo Job</div>
-
-        <FormField label="Nº do Trabalho *" value={form.work_order} onChange={set("work_order")} placeholder="WO-2026-001"/>
-        <div style={{display:"flex",gap:12}}>
-          <div style={{flex:1}}><FormField label="Cliente *" value={form.client} onChange={set("client")} placeholder="John Smith"/></div>
-          <div style={{flex:1}}><FormField label="Tel. Cliente" value={form.client_phone} onChange={set("client_phone")} placeholder="(770) 555-0000" type="tel"/></div>
-        </div>
-        <FormField label="Builder / Empresa" value={form.builder} onChange={set("builder")} placeholder="Brown Haven Homes"/>
-        <FormField label="Endereço *" value={form.address} onChange={set("address")} placeholder="123 Main St, Marietta, GA"/>
-        <FormField label="Instruções de Acesso" value={form.access_notes} onChange={set("access_notes")} multiline placeholder="Código do portão, onde estacionar..."/>
-        <div style={{display:"flex",gap:12}}>
-          <div style={{flex:1}}><FormField label="Data *" value={form.date} onChange={set("date")} type="date"/></div>
-          <div style={{flex:1}}><FormField label="Horário" value={form.time} onChange={set("time")} type="time"/></div>
-        </div>
-        <div style={{display:"flex",gap:12}}>
-          <div style={{flex:2}}>
-            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Serviço</label>
-            <select value={form.service} onChange={e=>setForm(f=>({...f,service:e.target.value}))}
-              style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff",marginBottom:14}}>
-              {SERVICES.map(s=><option key={s}>{s}</option>)}
-            </select>
-          </div>
-          <div style={{flex:1}}><FormField label="SF" value={form.square_footage} onChange={set("square_footage")} type="number" placeholder="88"/></div>
-        </div>
-        <div style={{display:"flex",gap:12}}>
-          <div style={{flex:1,marginBottom:14}}>
-            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Instalador</label>
-            <select value={form.assigned_to} onChange={e=>setForm(f=>({...f,assigned_to:e.target.value}))}
-              style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff"}}>
-              <option value="">Selecione...</option>
-              {installerNames.map(n=><option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div style={{flex:1}}><FormField label="Tel. Instalador" value={form.installer_phone} onChange={set("installer_phone")} placeholder="(470) 555-0000" type="tel"/></div>
-        </div>
-        <div style={{display:"flex",gap:12}}>
-          <div style={{flex:1}}><FormField label="Horas est." value={form.estimated_hours} onChange={set("estimated_hours")} type="number"/></div>
-          <div style={{flex:1,marginBottom:14}}>
-            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Status</label>
-            <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}
-              style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff"}}>
-              {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
-            </select>
-          </div>
-        </div>
-        <FormField label="Escopo" value={form.scope} onChange={set("scope")} multiline placeholder="Descreva o trabalho..."/>
-        <div style={{display:"flex",gap:12,marginTop:20}}>
-          <button onClick={save} disabled={saving} style={{flex:1,background:"#B8924A",color:"#fff",border:"none",
-            borderRadius:10,padding:13,fontWeight:800,fontSize:14,cursor:saving?"not-allowed":"pointer",opacity:saving?0.7:1}}>
-            {saving?"Salvando...":"Salvar Job"}
-          </button>
-          <button onClick={onCancel} style={{background:"#F3F4F6",color:"#374151",border:"none",
-            borderRadius:10,padding:"13px 20px",cursor:"pointer",fontSize:14}}>Cancelar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── INSTALLER MANAGER ───────────────────────────────────────────────
-function InstallerManager({ onClose }) {
-  const [installers, setInstallers] = useState([]);
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-
-  const load = async () => {
-    const {data} = await supabase.from("installers").select("*").order("name");
-    if (data) setInstallers(data);
-  };
-
-  useEffect(()=>{ load(); },[]);
-
-  const add = async () => {
-    if (!name||!password) { setMsg("Preencha nome e senha."); return; }
-    setSaving(true);
-    const {error} = await supabase.from("installers").insert([{name,password}]);
-    setSaving(false);
-    if (error) { setMsg("Erro: nome já existe."); return; }
-    setName(""); setPassword(""); setMsg("Instalador cadastrado!");
-    load(); setTimeout(()=>setMsg(""),3000);
-  };
-
-  const remove = async (id) => {
-    if (!confirm("Remover instalador?")) return;
-    await supabase.from("installers").delete().eq("id",id);
-    load();
-  };
-
-  return (
-    <div style={{position:"fixed",inset:0,background:"#00000077",
-      display:"flex",alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
-      <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",
-        maxWidth:480,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-          <div style={{fontSize:17,fontWeight:800}}>👷 Instaladores</div>
-          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#666"}}>×</button>
-        </div>
-        {msg && <div style={{background:msg.includes("Erro")?"#FEF2F2":"#F0FDF4",
-          color:msg.includes("Erro")?"#DC2626":"#16A34A",
-          borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:700,marginBottom:14}}>{msg}</div>}
-        <div style={{background:"#F9F7F4",borderRadius:12,padding:16,marginBottom:20}}>
-          <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Novo instalador</div>
-          <FormField label="Nome" value={name} onChange={setName} placeholder="Ex: Alberth"/>
-          <FormField label="Senha" value={password} onChange={setPassword} placeholder="Senha de acesso" type="password"/>
-          <button onClick={add} disabled={saving} style={{width:"100%",background:"#B8924A",color:"#fff",
-            border:"none",borderRadius:8,padding:11,fontWeight:700,cursor:"pointer",fontSize:13}}>
-            {saving?"Salvando...":"+ Adicionar"}
-          </button>
-        </div>
-        <div style={{fontSize:12,fontWeight:800,color:"#666",marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>
-          Cadastrados ({installers.length})
-        </div>
-        {installers.map(inst=>(
-          <div key={inst.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-            padding:"12px 14px",background:"#F9F7F4",borderRadius:10,marginBottom:8}}>
-            <div style={{fontSize:14,fontWeight:700}}>{inst.name}</div>
-            <button onClick={()=>remove(inst.id)} style={{background:"#FEF2F2",color:"#DC2626",
-              border:"1px solid #DC262633",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer",fontWeight:700}}>
-              Remover
-            </button>
-          </div>
-        ))}
-      </div>
+      }
     </div>
   );
 }
 
 // ─── DETAIL VIEW ─────────────────────────────────────────────────────
-function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, onSaveNotes, uploading }) {
+function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, onSaveNotes, onEdit, onDelete, uploading }) {
   const [notes, setNotes] = useState(job.completion_notes||"");
   const [savingNotes, setSavingNotes] = useState(false);
-  const isAdmin = session.role==="admin";
+  const isAdmin = session.role==="admin"||session.role==="owner";
   const cfg = STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
   const adminPhotos = (job.photos||[]).filter(p=>p.type==="admin");
   const completionPhotos = (job.photos||[]).filter(p=>p.type==="completion");
@@ -524,22 +547,31 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
 
   return (
     <div>
-      <div style={{background:"#1A1A1A",borderRadius:14,padding:22,
-        borderBottom:`4px solid ${cfg.color}`,marginBottom:14,color:"#fff"}}>
+      <div style={{background:"#1A1A1A",borderRadius:14,padding:22,borderBottom:`4px solid ${cfg.color}`,marginBottom:14,color:"#fff"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
           <div style={{flex:1}}>
             <div style={{fontSize:11,color:"#B8924A",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>{job.work_order}</div>
             <StatusBadge status={job.status}/>
             <div style={{fontSize:18,fontWeight:900,color:"#fff",marginTop:8}}>{job.client}</div>
-            {job.builder && <div style={{fontSize:13,color:"#B8924A",marginTop:2,fontWeight:600}}>💰 {job.builder}</div>}
+            {job.builder&&<div style={{fontSize:13,color:"#B8924A",marginTop:2,fontWeight:600}}>💰 {job.builder}</div>}
             <div style={{fontSize:14,color:"#aaa",marginTop:2}}>{job.service}</div>
           </div>
-          {job.square_footage && (
-            <div style={{background:"#B8924A",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
-              <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>{job.square_footage}</div>
-              <div style={{fontSize:10,color:"#fff",opacity:0.8,letterSpacing:1}}>SF</div>
-            </div>
-          )}
+          <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"flex-end"}}>
+            {job.square_footage&&(
+              <div style={{background:"#B8924A",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
+                <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>{job.square_footage}</div>
+                <div style={{fontSize:10,color:"#fff",opacity:0.8,letterSpacing:1}}>SF</div>
+              </div>
+            )}
+            {isAdmin&&(
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={onEdit} style={{background:"#2A2A2A",color:"#B8924A",border:"1px solid #B8924A44",
+                  borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>✏️ Editar</button>
+                <button onClick={onDelete} style={{background:"#DC262622",color:"#DC2626",border:"1px solid #DC262633",
+                  borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>🗑️</button>
+              </div>
+            )}
+          </div>
         </div>
         <div style={{display:"flex",gap:16,marginTop:14,flexWrap:"wrap"}}>
           {[["📅",`${formatDate(job.date)} às ${job.time}`],["👷",job.assigned_to||"—"],["⏱",`~${job.estimated_hours}h`]]
@@ -547,7 +579,7 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
         </div>
       </div>
 
-      {(job.client_phone||job.installer_phone) && (
+      {(job.client_phone||job.installer_phone)&&(
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:18,marginBottom:14}}>
           <SectionTitle>📞 Contatos</SectionTitle>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
@@ -560,7 +592,7 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:18,marginBottom:14}}>
         <SectionTitle>📍 Endereço & Acesso</SectionTitle>
         <div style={{fontSize:15,fontWeight:700,color:"#1A1A1A",marginBottom:10}}>{job.address}</div>
-        {job.access_notes && (
+        {job.access_notes&&(
           <div style={{background:"#FFFBF5",border:"1px solid #B8924A44",borderRadius:8,padding:12,fontSize:14,color:"#555",lineHeight:1.7}}>
             <span style={{fontSize:11,fontWeight:800,color:"#B8924A",display:"block",marginBottom:4}}>ACESSO</span>
             {job.access_notes}
@@ -568,7 +600,7 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
         )}
       </div>
 
-      {job.scope && (
+      {job.scope&&(
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:18,marginBottom:14}}>
           <SectionTitle>📋 Escopo</SectionTitle>
           <div style={{fontSize:14,color:"#444",lineHeight:1.7}}>{job.scope}</div>
@@ -578,20 +610,18 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:18,marginBottom:14}}>
         <SectionTitle>📸 Fotos do Local</SectionTitle>
         <PhotoGrid photos={adminPhotos} onDelete={p=>onDeletePhoto(p)} canDelete={isAdmin}/>
-        {isAdmin && <PhotoUploadBtn onAdd={f=>onAddPhoto(job.id,"admin",f)} uploading={uploading}/>}
+        {isAdmin&&<PhotoUploadBtn onAdd={f=>onAddPhoto(job.id,"admin",f)} uploading={uploading}/>}
         {adminPhotos.length===0&&<div style={{fontSize:13,color:"#aaa",marginTop:8}}>Nenhuma foto.</div>}
       </div>
 
-      {isAdmin && (
+      {isAdmin&&(
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:18,marginBottom:14}}>
           <SectionTitle>⚙️ Status</SectionTitle>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {Object.entries(STATUS_CONFIG).map(([key,cfg])=>(
               <button key={key} onClick={()=>onUpdateStatus(job.id,key)} style={{
-                background:job.status===key?cfg.color:cfg.bg,
-                color:job.status===key?"#fff":cfg.color,
-                border:`1px solid ${cfg.color}`,borderRadius:20,
-                padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                background:job.status===key?cfg.color:cfg.bg,color:job.status===key?"#fff":cfg.color,
+                border:`1px solid ${cfg.color}`,borderRadius:20,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>
                 {cfg.label}
               </button>
             ))}
@@ -609,19 +639,17 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
             placeholder="Descreva como foi o trabalho..."
             style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"10px 12px",
               fontSize:14,resize:"vertical",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          <button onClick={handleSaveNotes} disabled={savingNotes} style={{
-            marginTop:10,background:"#16A34A",color:"#fff",border:"none",
-            borderRadius:8,padding:"9px 20px",fontWeight:700,cursor:"pointer",fontSize:13,
-            opacity:savingNotes?0.7:1}}>
+          <button onClick={handleSaveNotes} disabled={savingNotes} style={{marginTop:10,background:"#16A34A",
+            color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",fontWeight:700,cursor:"pointer",
+            fontSize:13,opacity:savingNotes?0.7:1}}>
             {savingNotes?"Salvando...":"💾 Salvar"}
           </button>
         </div>
       </div>
 
-      {session.role==="installer" && job.status!=="completed" && (
-        <button onClick={()=>onUpdateStatus(job.id,"completed")} style={{
-          width:"100%",background:"#16A34A",color:"#fff",border:"none",
-          borderRadius:12,padding:16,fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:14}}>
+      {session.role==="installer"&&job.status!=="completed"&&(
+        <button onClick={()=>onUpdateStatus(job.id,"completed")} style={{width:"100%",background:"#16A34A",
+          color:"#fff",border:"none",borderRadius:12,padding:16,fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:14}}>
           ✅ Marcar como Concluído
         </button>
       )}
@@ -632,11 +660,13 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
 // ─── MAIN APP ────────────────────────────────────────────────────────
 export default function App() {
   const [session, setSession] = useState(null);
-  const [tab, setTab] = useState("list"); // list | calendar
-  const [view, setView] = useState("main"); // main | detail
+  const [tab, setTab] = useState("list");
+  const [view, setView] = useState("main");
   const [jobs, setJobs] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+  const [showAdmins, setShowAdmins] = useState(false);
   const [showInstallers, setShowInstallers] = useState(false);
   const [toast, setToast] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -645,16 +675,16 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [installerNames, setInstallerNames] = useState([]);
 
-  const showToast = (msg, type="success") => {
-    setToast({msg,type});
-    setTimeout(()=>setToast(null),3500);
-  };
+  const showToast = (msg,type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
+
+  const isAdmin = session?.role==="admin"||session?.role==="owner";
 
   const loadJobs = async () => {
     setLoading(true);
-    let query = supabase.from("jobs").select("*").order("date",{ascending:true});
-    if (session?.role==="installer") query = query.eq("assigned_to",session.name);
-    const {data:jobsData,error} = await query;
+    let q = supabase.from("jobs").select("*").order("date",{ascending:true});
+    if (session?.role==="admin") q = q.eq("company",session.company);
+    if (session?.role==="installer") q = q.eq("assigned_to",session.name);
+    const {data:jobsData,error} = await q;
     if (error) { showToast("Erro ao carregar","error"); setLoading(false); return; }
     const {data:photosData} = await supabase.from("job_photos").select("*");
     const photos = photosData||[];
@@ -663,21 +693,41 @@ export default function App() {
   };
 
   const loadInstallerNames = async () => {
-    const {data} = await supabase.from("installers").select("name").order("name");
+    let q = supabase.from("installers").select("name").order("name");
+    if (session?.role==="admin") q = q.eq("company",session.company);
+    const {data} = await q;
     if (data) setInstallerNames(data.map(i=>i.name));
   };
 
-  useEffect(()=>{ if(session){ loadJobs(); if(session.role==="admin") loadInstallerNames(); } },[session]);
+  useEffect(()=>{ if(session){ loadJobs(); if(isAdmin) loadInstallerNames(); } },[session]);
 
   const selectedJob = jobs.find(j=>j.id===selectedId);
   const filteredJobs = jobs.filter(j=>filterStatus==="all"||j.status===filterStatus);
 
   const saveJob = async (form) => {
     setSaving(true);
-    const {data,error} = await supabase.from("jobs").insert([form]).select().single();
+    const company = session.role==="admin"?session.company:(form.company||"Owner");
+    const payload = {...form, company};
+    const {data,error} = await supabase.from("jobs").insert([payload]).select().single();
     if (error) { showToast("Erro ao salvar","error"); setSaving(false); return; }
     setJobs(prev=>[...prev,{...data,photos:[]}]);
     setShowForm(false); setSaving(false); showToast("Job criado!");
+  };
+
+  const updateJob = async (form) => {
+    setSaving(true);
+    const {error} = await supabase.from("jobs").update(form).eq("id",editingJob.id);
+    if (error) { showToast("Erro ao atualizar","error"); setSaving(false); return; }
+    setJobs(prev=>prev.map(j=>j.id===editingJob.id?{...j,...form}:j));
+    setEditingJob(null); setSaving(false); showToast("Job atualizado!");
+  };
+
+  const deleteJob = async (id) => {
+    if (!confirm("Excluir este job permanentemente?")) return;
+    await supabase.from("job_photos").delete().eq("job_id",id);
+    await supabase.from("jobs").delete().eq("id",id);
+    setJobs(prev=>prev.filter(j=>j.id!==id));
+    setView("main"); showToast("Job excluído!");
   };
 
   const updateStatus = async (id,status) => {
@@ -723,27 +773,31 @@ export default function App() {
 
   return (
     <div style={{fontFamily:"'Inter',sans-serif",background:"#F9F7F4",minHeight:"100vh",paddingBottom:70}}>
-
       {/* HEADER */}
       <div style={{background:"#1A1A1A",padding:"0 18px",display:"flex",alignItems:"center",
-        justifyContent:"space-between",height:58,borderBottom:"3px solid #B8924A",
-        position:"sticky",top:0,zIndex:100}}>
+        justifyContent:"space-between",height:58,borderBottom:"3px solid #B8924A",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:20,fontWeight:900,color:"#B8924A",letterSpacing:-1}}>CasaLuma</span>
           <span style={{fontSize:10,color:"#555",letterSpacing:2,textTransform:"uppercase"}}>Field</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {session.role==="admin" && (
+          {session.role==="owner"&&(
+            <button onClick={()=>setShowAdmins(true)} style={{background:"#2A2A2A",color:"#B8924A",
+              border:"1px solid #B8924A44",borderRadius:20,padding:"3px 10px",fontSize:11,cursor:"pointer",fontWeight:700}}>
+              ⚙️
+            </button>
+          )}
+          {isAdmin&&(
             <button onClick={()=>setShowInstallers(true)} style={{background:"#2A2A2A",color:"#B8924A",
-              border:"1px solid #B8924A44",borderRadius:20,padding:"3px 12px",fontSize:11,cursor:"pointer",fontWeight:700}}>
+              border:"1px solid #B8924A44",borderRadius:20,padding:"3px 10px",fontSize:11,cursor:"pointer",fontWeight:700}}>
               👷
             </button>
           )}
           <span style={{background:"#B8924A22",color:"#B8924A",border:"1px solid #B8924A44",
             borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>
-            {session.role==="admin"?"⚙ Admin":`🔨 ${session.name}`}
+            {session.role==="owner"?"👑 Owner":session.role==="admin"?`⚙️ ${session.name}`:`🔨 ${session.name}`}
           </span>
-          {view==="detail" && (
+          {view==="detail"&&(
             <button onClick={()=>setView("main")} style={{background:"none",border:"1px solid #444",
               color:"#ccc",borderRadius:20,padding:"3px 12px",fontSize:11,cursor:"pointer"}}>← Voltar</button>
           )}
@@ -752,7 +806,7 @@ export default function App() {
       </div>
 
       {/* TOAST */}
-      {toast && (
+      {toast&&(
         <div style={{position:"fixed",top:68,right:16,zIndex:999,
           background:toast.type==="error"?"#DC2626":"#16A34A",
           color:"#fff",borderRadius:10,padding:"10px 18px",fontSize:13,fontWeight:700,
@@ -762,29 +816,28 @@ export default function App() {
       )}
 
       <div style={{maxWidth:880,margin:"0 auto",padding:"18px 14px"}}>
-
-        {/* DETAIL VIEW */}
-        {view==="detail" && selectedJob && (
+        {view==="detail"&&selectedJob&&(
           <DetailView
             job={selectedJob} session={session}
             onUpdateStatus={updateStatus}
             onAddPhoto={addPhoto}
             onDeletePhoto={deletePhoto}
             onSaveNotes={saveNotes}
+            onEdit={()=>setEditingJob(selectedJob)}
+            onDelete={()=>deleteJob(selectedJob.id)}
             uploading={uploading}
           />
         )}
 
-        {/* MAIN VIEWS */}
-        {view==="main" && (
+        {view==="main"&&(
           <>
-            {/* LIST TAB */}
-            {tab==="list" && (
+            {tab==="list"&&(
               <>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:20,fontWeight:800,color:"#1A1A1A"}}>
-                      {session.role==="installer"?`Jobs de ${session.name}`:"Todos os Jobs"}
+                      {session.role==="installer"?`Jobs de ${session.name}`:
+                       session.role==="admin"?`${session.company}`:"Todos os Jobs"}
                     </div>
                     <div style={{fontSize:12,color:"#999"}}>{filteredJobs.length} trabalho(s)</div>
                   </div>
@@ -800,7 +853,7 @@ export default function App() {
                     ))}
                     <button onClick={loadJobs} style={{background:"#F3F4F6",color:"#555",
                       border:"1px solid #E5E7EB",borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer"}}>↻</button>
-                    {session.role==="admin" && (
+                    {isAdmin&&(
                       <button onClick={()=>setShowForm(true)} style={{background:"#B8924A",color:"#fff",
                         border:"none",borderRadius:20,padding:"6px 16px",fontSize:12,fontWeight:800,cursor:"pointer"}}>
                         + Novo Job
@@ -809,99 +862,81 @@ export default function App() {
                   </div>
                 </div>
 
-                {loading ? (
-                  <div style={{textAlign:"center",padding:"60px 20px",color:"#aaa"}}>
-                    <div style={{fontSize:32,marginBottom:10}}>⏳</div>
-                    <div>Carregando...</div>
-                  </div>
-                ) : filteredJobs.length===0 ? (
-                  <div style={{textAlign:"center",padding:"60px 20px",color:"#bbb"}}>
-                    <div style={{fontSize:44,marginBottom:10}}>📋</div>
-                    <div style={{fontSize:15,fontWeight:600}}>Nenhum job encontrado</div>
-                  </div>
-                ) : (
-                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                    {filteredJobs.map(job=>{
-                      const cfg=STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
-                      const completionCount=(job.photos||[]).filter(p=>p.type==="completion").length;
-                      const adminPhoto=(job.photos||[]).find(p=>p.type==="admin");
-                      return (
-                        <div key={job.id} onClick={()=>openJob(job)} style={{
-                          background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",
-                          borderLeft:`4px solid ${cfg.color}`,padding:18,cursor:"pointer",
-                          boxShadow:"0 2px 8px rgba(0,0,0,0.04)",transition:"box-shadow 0.15s",
-                        }}
-                          onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"}
-                          onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.04)"}
-                        >
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
-                                <span style={{fontSize:11,fontWeight:800,color:"#B8924A",letterSpacing:1}}>{job.work_order}</span>
-                                <StatusBadge status={job.status}/>
-                                {job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",
-                                  borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}
-                              </div>
-                              <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
-                              {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
-                              <div style={{fontSize:13,color:"#666",marginBottom:6,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                                📍 {job.address}
-                              </div>
-                              <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-                                <span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span>
-                                <span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>
-                                {job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}
-                              </div>
-                              <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
-                                {job.client_phone&&<span style={{fontSize:11,color:"#2563EB",background:"#EFF6FF",borderRadius:10,padding:"2px 8px",fontWeight:600}}>📞 Cliente</span>}
-                                {completionCount>0&&<span style={{fontSize:11,color:"#16A34A",background:"#F0FDF4",borderRadius:10,padding:"2px 8px",fontWeight:600}}>✅ {completionCount} foto(s)</span>}
+                {loading
+                  ? <div style={{textAlign:"center",padding:"60px 20px",color:"#aaa"}}><div style={{fontSize:32,marginBottom:10}}>⏳</div><div>Carregando...</div></div>
+                  : filteredJobs.length===0
+                    ? <div style={{textAlign:"center",padding:"60px 20px",color:"#bbb"}}><div style={{fontSize:44,marginBottom:10}}>📋</div><div style={{fontSize:15,fontWeight:600}}>Nenhum job encontrado</div></div>
+                    : <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                        {filteredJobs.map(job=>{
+                          const cfg=STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
+                          const completionCount=(job.photos||[]).filter(p=>p.type==="completion").length;
+                          const adminPhoto=(job.photos||[]).find(p=>p.type==="admin");
+                          return (
+                            <div key={job.id} onClick={()=>openJob(job)} style={{
+                              background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",
+                              borderLeft:`4px solid ${cfg.color}`,padding:18,cursor:"pointer",
+                              boxShadow:"0 2px 8px rgba(0,0,0,0.04)",transition:"box-shadow 0.15s"}}
+                              onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"}
+                              onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.04)"}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+                                    <span style={{fontSize:11,fontWeight:800,color:"#B8924A",letterSpacing:1}}>{job.work_order}</span>
+                                    <StatusBadge status={job.status}/>
+                                    {job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}
+                                  </div>
+                                  <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
+                                  {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
+                                  <div style={{fontSize:13,color:"#666",marginBottom:6,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
+                                  <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+                                    <span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span>
+                                    <span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>
+                                    {job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}
+                                  </div>
+                                  <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+                                    {job.client_phone&&<span style={{fontSize:11,color:"#2563EB",background:"#EFF6FF",borderRadius:10,padding:"2px 8px",fontWeight:600}}>📞 Cliente</span>}
+                                    {completionCount>0&&<span style={{fontSize:11,color:"#16A34A",background:"#F0FDF4",borderRadius:10,padding:"2px 8px",fontWeight:600}}>✅ {completionCount} foto(s)</span>}
+                                    {session.role==="owner"&&job.company&&<span style={{fontSize:11,color:"#555",background:"#F3F4F6",borderRadius:10,padding:"2px 8px",fontWeight:600}}>🏢 {job.company}</span>}
+                                  </div>
+                                </div>
+                                {adminPhoto&&<img src={adminPhoto.url} alt="" style={{width:76,height:62,objectFit:"cover",borderRadius:8,border:"2px solid #E5E7EB",flexShrink:0}}/>}
                               </div>
                             </div>
-                            {adminPhoto&&(
-                              <img src={adminPhoto.url} alt="" style={{width:76,height:62,objectFit:"cover",
-                                borderRadius:8,border:"2px solid #E5E7EB",flexShrink:0}}/>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                          );
+                        })}
+                      </div>
+                }
               </>
             )}
-
-            {/* CALENDAR TAB */}
-            {tab==="calendar" && (
-              <CalendarView jobs={jobs} onSelectJob={openJob}/>
-            )}
+            {tab==="calendar"&&<CalendarView jobs={jobs} onSelectJob={openJob}/>}
           </>
         )}
       </div>
 
       {/* BOTTOM NAV */}
-      {view==="main" && (
+      {view==="main"&&(
         <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#1A1A1A",
           borderTop:"2px solid #B8924A",display:"flex",zIndex:100}}>
-          {[
-            {id:"list",icon:"📋",label:"Jobs"},
-            {id:"calendar",icon:"📅",label:"Calendário"},
-          ].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{
-              flex:1,padding:"12px 8px",background:"none",border:"none",cursor:"pointer",
-              display:"flex",flexDirection:"column",alignItems:"center",gap:3,
-            }}>
+          {[{id:"list",icon:"📋",label:"Jobs"},{id:"calendar",icon:"📅",label:"Calendário"}].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"12px 8px",background:"none",
+              border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
               <span style={{fontSize:20}}>{t.icon}</span>
-              <span style={{fontSize:11,fontWeight:700,
-                color:tab===t.id?"#B8924A":"#555"}}>{t.label}</span>
+              <span style={{fontSize:11,fontWeight:700,color:tab===t.id?"#B8924A":"#555"}}>{t.label}</span>
             </button>
           ))}
         </div>
       )}
 
-      {showForm && session.role==="admin" && (
+      {showForm&&isAdmin&&(
         <JobForm onSave={saveJob} onCancel={()=>setShowForm(false)} saving={saving} installerNames={installerNames}/>
       )}
-      {showInstallers && <InstallerManager onClose={()=>{setShowInstallers(false);loadInstallerNames();}}/>}
+      {editingJob&&isAdmin&&(
+        <JobForm onSave={updateJob} onCancel={()=>setEditingJob(null)} saving={saving}
+          installerNames={installerNames} initial={editingJob}/>
+      )}
+      {showAdmins&&session.role==="owner"&&<AdminManager onClose={()=>setShowAdmins(false)}/>}
+      {showInstallers&&isAdmin&&<InstallerManager session={session} onClose={()=>{setShowInstallers(false);loadInstallerNames();}}/>}
     </div>
   );
 }
+
