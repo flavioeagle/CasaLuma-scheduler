@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = "https://gvkkzdzfjiafpjkyscjn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2a2t6ZHpmamlhZnBqa3lzY2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODM0MTUsImV4cCI6MjA4NzM1OTQxNX0.DUSrbbqced4HgC0HOAaJ2ERPDHc7gYFiHHHBPDEB1Zg";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 const ADMIN_PASSWORD = "casaluma2026";
 
 const STATUS_CONFIG = {
@@ -19,11 +18,9 @@ const SERVICES = [
   "Flooring","Tile Work","Bathroom Remodel","Other",
 ];
 
-const EMPTY_FORM = {
-  work_order:"", client:"", client_phone:"", address:"", access_notes:"",
-  date:"", time:"08:00", service:SERVICES[0], status:"scheduled",
-  assigned_to:"", installer_phone:"", estimated_hours:4, scope:"",
-};
+const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DAYS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
 function formatDate(d) {
   if (!d) return "";
@@ -31,8 +28,12 @@ function formatDate(d) {
   return `${day}/${m}/${y}`;
 }
 
+function todayStr() {
+  return new Date().toISOString().split("T")[0];
+}
+
 function StatusBadge({ status }) {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.scheduled;
+  const cfg = STATUS_CONFIG[status]||STATUS_CONFIG.scheduled;
   return (
     <span style={{background:cfg.bg,color:cfg.color,border:`1px solid ${cfg.color}33`,
       borderRadius:20,padding:"3px 12px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>
@@ -53,7 +54,8 @@ function PhoneButton({ phone, label, color="#B8924A" }) {
 }
 
 function SectionTitle({ children }) {
-  return <div style={{fontSize:11,fontWeight:800,color:"#1A1A1A",marginBottom:12,textTransform:"uppercase",letterSpacing:0.8}}>{children}</div>;
+  return <div style={{fontSize:11,fontWeight:800,color:"#1A1A1A",marginBottom:12,
+    textTransform:"uppercase",letterSpacing:0.8}}>{children}</div>;
 }
 
 function FormField({ label, value, onChange, type="text", multiline, placeholder }) {
@@ -63,16 +65,18 @@ function FormField({ label, value, onChange, type="text", multiline, placeholder
     <div style={{marginBottom:14}}>
       <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>{label}</label>
       {multiline
-        ? <textarea value={value} onChange={e=>onChange(e.target.value)} rows={3} placeholder={placeholder} style={{...base,resize:"vertical"}}/>
-        : <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={base}/>
+        ? <textarea value={value} onChange={e=>onChange(e.target.value)} rows={3}
+            placeholder={placeholder} style={{...base,resize:"vertical"}}/>
+        : <input type={type} value={value} onChange={e=>onChange(e.target.value)}
+            placeholder={placeholder} style={base}/>
       }
     </div>
   );
 }
 
-// ─── LOGIN SCREEN ─────────────────────────────────────────────────────
+// ─── LOGIN ────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
-  const [mode, setMode] = useState(null); // 'admin' | 'installer'
+  const [mode, setMode] = useState(null);
   const [password, setPassword] = useState("");
   const [installerName, setInstallerName] = useState("");
   const [error, setError] = useState("");
@@ -86,23 +90,19 @@ function LoginScreen({ onLogin }) {
   }, []);
 
   const handleAdmin = () => {
-    if (password === ADMIN_PASSWORD) {
-      onLogin({ role: "admin", name: "Admin" });
-    } else {
-      setError("Senha incorreta.");
-    }
+    if (password === ADMIN_PASSWORD) onLogin({role:"admin",name:"Admin"});
+    else setError("Senha incorreta.");
   };
 
   const handleInstaller = async () => {
     if (!installerName) { setError("Selecione seu nome."); return; }
     if (!password) { setError("Digite sua senha."); return; }
     setLoading(true);
-    const { data, error: err } = await supabase
-      .from("installers").select("*")
-      .eq("name", installerName).eq("password", password).single();
+    const {data,error:err} = await supabase.from("installers").select("*")
+      .eq("name",installerName).eq("password",password).single();
     setLoading(false);
-    if (err || !data) { setError("Nome ou senha incorretos."); return; }
-    onLogin({ role: "installer", name: data.name, id: data.id });
+    if (err||!data) { setError("Nome ou senha incorretos."); return; }
+    onLogin({role:"installer",name:data.name,id:data.id});
   };
 
   if (!mode) return (
@@ -116,15 +116,13 @@ function LoginScreen({ onLogin }) {
           <button onClick={()=>{setMode("admin");setError("");setPassword("");}} style={{
             background:"#B8924A",color:"#fff",border:"none",borderRadius:14,
             padding:"20px 24px",fontSize:16,fontWeight:800,cursor:"pointer",
-            boxShadow:"0 8px 30px rgba(184,146,74,0.35)",
-          }}>
+            boxShadow:"0 8px 30px rgba(184,146,74,0.35)"}}>
             <div>⚙️ Admin</div>
             <div style={{fontSize:12,fontWeight:400,opacity:0.85,marginTop:4}}>Gerenciar todos os jobs</div>
           </button>
           <button onClick={()=>{setMode("installer");setError("");setPassword("");}} style={{
             background:"#2A2A2A",color:"#fff",border:"2px solid #3A3A3A",
-            borderRadius:14,padding:"20px 24px",fontSize:16,fontWeight:800,cursor:"pointer",
-          }}>
+            borderRadius:14,padding:"20px 24px",fontSize:16,fontWeight:800,cursor:"pointer"}}>
             <div>🔨 Instalador</div>
             <div style={{fontSize:12,fontWeight:400,opacity:0.6,marginTop:4}}>Ver meus jobs</div>
           </button>
@@ -141,7 +139,6 @@ function LoginScreen({ onLogin }) {
         <div style={{fontSize:11,color:"#555",letterSpacing:3,textTransform:"uppercase",marginBottom:32,textAlign:"center"}}>
           {mode==="admin"?"Login Admin":"Login Instalador"}
         </div>
-
         <div style={{background:"#2A2A2A",borderRadius:16,padding:24}}>
           {mode==="installer" && (
             <div style={{marginBottom:16}}>
@@ -154,7 +151,6 @@ function LoginScreen({ onLogin }) {
               </select>
             </div>
           )}
-
           <div style={{marginBottom:16}}>
             <label style={{fontSize:12,color:"#aaa",fontWeight:700,display:"block",marginBottom:8}}>Senha</label>
             <input type="password" value={password} onChange={e=>{setPassword(e.target.value);setError("");}}
@@ -162,30 +158,170 @@ function LoginScreen({ onLogin }) {
               style={{width:"100%",border:"1px solid #444",borderRadius:8,padding:"10px 12px",
                 fontSize:14,background:"#1A1A1A",color:"#fff",boxSizing:"border-box",outline:"none"}}/>
           </div>
-
           {error && <div style={{color:"#DC2626",fontSize:13,marginBottom:12,fontWeight:600}}>{error}</div>}
-
           <button onClick={mode==="admin"?handleAdmin:handleInstaller} disabled={loading} style={{
             width:"100%",background:"#B8924A",color:"#fff",border:"none",
             borderRadius:10,padding:13,fontWeight:800,fontSize:15,cursor:"pointer",
-            opacity:loading?0.7:1,marginBottom:12,
-          }}>{loading?"Verificando...":"Entrar"}</button>
-
+            opacity:loading?0.7:1,marginBottom:12}}>
+            {loading?"Verificando...":"Entrar"}
+          </button>
           <button onClick={()=>{setMode(null);setError("");setPassword("");}} style={{
             width:"100%",background:"none",color:"#666",border:"1px solid #444",
-            borderRadius:10,padding:10,cursor:"pointer",fontSize:13,
-          }}>← Voltar</button>
+            borderRadius:10,padding:10,cursor:"pointer",fontSize:13}}>← Voltar</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── PHOTO UPLOAD ────────────────────────────────────────────────────
+// ─── CALENDAR VIEW ────────────────────────────────────────────────────
+function CalendarView({ jobs, onSelectJob }) {
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [selectedDay, setSelectedDay] = useState(todayStr());
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  const jobsByDate = {};
+  jobs.forEach(j => {
+    if (j.date) {
+      if (!jobsByDate[j.date]) jobsByDate[j.date] = [];
+      jobsByDate[j.date].push(j);
+    }
+  });
+
+  const prevMonth = () => {
+    if (month===0) { setMonth(11); setYear(y=>y-1); }
+    else setMonth(m=>m-1);
+  };
+  const nextMonth = () => {
+    if (month===11) { setMonth(0); setYear(y=>y+1); }
+    else setMonth(m=>m+1);
+  };
+
+  const selectedJobs = jobsByDate[selectedDay]||[];
+  const todayFull = todayStr();
+
+  return (
+    <div>
+      {/* Month nav */}
+      <div style={{background:"#1A1A1A",borderRadius:14,padding:"16px 20px",marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <button onClick={prevMonth} style={{background:"#2A2A2A",border:"none",color:"#B8924A",
+            borderRadius:8,padding:"6px 14px",fontSize:18,cursor:"pointer"}}>‹</button>
+          <div style={{color:"#fff",fontWeight:800,fontSize:16}}>
+            {MONTHS[month]} {year}
+          </div>
+          <button onClick={nextMonth} style={{background:"#2A2A2A",border:"none",color:"#B8924A",
+            borderRadius:8,padding:"6px 14px",fontSize:18,cursor:"pointer"}}>›</button>
+        </div>
+
+        {/* Day headers */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+          {DAYS.map(d=>(
+            <div key={d} style={{textAlign:"center",fontSize:10,color:"#666",fontWeight:700,padding:"4px 0"}}>
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Days grid */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+          {Array(firstDay).fill(null).map((_,i)=>(
+            <div key={`e${i}`}/>
+          ))}
+          {Array(daysInMonth).fill(null).map((_,i)=>{
+            const day = i+1;
+            const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+            const dayJobs = jobsByDate[dateStr]||[];
+            const isToday = dateStr===todayFull;
+            const isSelected = dateStr===selectedDay;
+            const hasJobs = dayJobs.length>0;
+
+            return (
+              <button key={day} onClick={()=>setSelectedDay(dateStr)} style={{
+                background: isSelected?"#B8924A": isToday?"#2A2A2A":"transparent",
+                border: isToday&&!isSelected?"1px solid #B8924A44":"none",
+                borderRadius:8,padding:"6px 2px",cursor:"pointer",
+                display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+              }}>
+                <span style={{fontSize:13,fontWeight:isToday||isSelected?800:400,
+                  color:isSelected?"#fff":isToday?"#B8924A":"#ccc"}}>
+                  {day}
+                </span>
+                {hasJobs && (
+                  <div style={{display:"flex",gap:2,flexWrap:"wrap",justifyContent:"center"}}>
+                    {dayJobs.slice(0,3).map((j,idx)=>{
+                      const cfg=STATUS_CONFIG[j.status]||STATUS_CONFIG.scheduled;
+                      return <div key={idx} style={{width:5,height:5,borderRadius:"50%",background:cfg.color}}/>;
+                    })}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Selected day jobs */}
+      <div style={{marginBottom:8}}>
+        <div style={{fontSize:13,fontWeight:800,color:"#1A1A1A",marginBottom:10}}>
+          📅 {formatDate(selectedDay)}
+          <span style={{color:"#999",fontWeight:400,marginLeft:8}}>
+            {selectedJobs.length===0?"Sem jobs":""+selectedJobs.length+" job(s)"}
+          </span>
+        </div>
+        {selectedJobs.length===0 ? (
+          <div style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",
+            padding:"24px",textAlign:"center",color:"#bbb",fontSize:13}}>
+            Nenhum job neste dia
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {selectedJobs.map(job=>{
+              const cfg=STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
+              return (
+                <div key={job.id} onClick={()=>onSelectJob(job)} style={{
+                  background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",
+                  borderLeft:`4px solid ${cfg.color}`,padding:"14px 16px",cursor:"pointer",
+                  boxShadow:"0 2px 8px rgba(0,0,0,0.04)",
+                }}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+                        <span style={{fontSize:11,fontWeight:800,color:"#B8924A",letterSpacing:1}}>{job.work_order}</span>
+                        <StatusBadge status={job.status}/>
+                      </div>
+                      <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
+                      {job.builder && <div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
+                      <div style={{fontSize:13,color:"#666",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                        📍 {job.address}
+                      </div>
+                      <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                        <span style={{fontSize:12,color:"#999"}}>🕐 {job.time}</span>
+                        <span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>
+                        {job.square_footage&&<span style={{fontSize:12,color:"#999",fontWeight:700}}>{job.square_footage} SF</span>}
+                        {job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── PHOTO GRID ───────────────────────────────────────────────────────
 function PhotoGrid({ photos, onDelete, canDelete }) {
   return (
     <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>
-      {photos.map((p,i) => (
+      {photos.map((p,i)=>(
         <div key={i} style={{position:"relative"}}>
           <img src={p.url||p} alt="" onClick={()=>window.open(p.url||p,"_blank")}
             style={{width:90,height:70,objectFit:"cover",borderRadius:8,
@@ -195,8 +331,7 @@ function PhotoGrid({ photos, onDelete, canDelete }) {
               position:"absolute",top:-6,right:-6,background:"#DC2626",color:"#fff",
               border:"none",borderRadius:"50%",width:20,height:20,fontSize:12,
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
-              fontWeight:900,lineHeight:1,
-            }}>×</button>
+              fontWeight:900,lineHeight:1}}>×</button>
           )}
         </div>
       ))}
@@ -204,55 +339,68 @@ function PhotoGrid({ photos, onDelete, canDelete }) {
   );
 }
 
-function PhotoUpload({ onAdd, uploading }) {
+function PhotoUploadBtn({ onAdd, uploading }) {
   const ref = useRef();
   return (
-    <div style={{marginTop:8}}>
+    <>
       <button onClick={()=>ref.current.click()} disabled={uploading} style={{
         width:90,height:70,border:"2px dashed #B8924A",borderRadius:8,
         background:"#FFFBF5",color:"#B8924A",fontSize:uploading?14:22,
-        cursor:uploading?"not-allowed":"pointer",
-        display:"flex",alignItems:"center",justifyContent:"center",
-      }}>{uploading?"...":"+"}</button>
+        cursor:uploading?"not-allowed":"pointer",marginTop:8,
+        display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {uploading?"...":"+"}
+      </button>
       <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}}
         onChange={e=>Array.from(e.target.files).forEach(f=>onAdd(f))}/>
-    </div>
+    </>
   );
 }
 
 // ─── JOB FORM ────────────────────────────────────────────────────────
 function JobForm({ onSave, onCancel, saving, installerNames }) {
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState({
+    work_order:"",client:"",client_phone:"",address:"",access_notes:"",
+    date:"",time:"08:00",service:SERVICES[0],status:"scheduled",
+    assigned_to:"",installer_phone:"",estimated_hours:4,scope:"",
+    square_footage:"",builder:"",
+  });
   const set = k => v => setForm(f=>({...f,[k]:v}));
+
   const save = () => {
     if (!form.work_order||!form.client||!form.address||!form.date) {
       alert("Preencha: Nº do Trabalho, Cliente, Endereço e Data."); return;
     }
-    onSave(form);
+    onSave({...form, square_footage: form.square_footage ? Number(form.square_footage) : null});
   };
+
   return (
     <div style={{position:"fixed",inset:0,background:"#00000077",
       display:"flex",alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
       <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",
         maxWidth:560,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{fontSize:17,fontWeight:800,marginBottom:20}}>➕ Novo Job</div>
+
         <FormField label="Nº do Trabalho *" value={form.work_order} onChange={set("work_order")} placeholder="WO-2026-001"/>
         <div style={{display:"flex",gap:12}}>
           <div style={{flex:1}}><FormField label="Cliente *" value={form.client} onChange={set("client")} placeholder="John Smith"/></div>
           <div style={{flex:1}}><FormField label="Tel. Cliente" value={form.client_phone} onChange={set("client_phone")} placeholder="(770) 555-0000" type="tel"/></div>
         </div>
+        <FormField label="Builder / Empresa" value={form.builder} onChange={set("builder")} placeholder="Brown Haven Homes"/>
         <FormField label="Endereço *" value={form.address} onChange={set("address")} placeholder="123 Main St, Marietta, GA"/>
         <FormField label="Instruções de Acesso" value={form.access_notes} onChange={set("access_notes")} multiline placeholder="Código do portão, onde estacionar..."/>
         <div style={{display:"flex",gap:12}}>
           <div style={{flex:1}}><FormField label="Data *" value={form.date} onChange={set("date")} type="date"/></div>
           <div style={{flex:1}}><FormField label="Horário" value={form.time} onChange={set("time")} type="time"/></div>
         </div>
-        <div style={{marginBottom:14}}>
-          <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Serviço</label>
-          <select value={form.service} onChange={e=>setForm(f=>({...f,service:e.target.value}))}
-            style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff"}}>
-            {SERVICES.map(s=><option key={s}>{s}</option>)}
-          </select>
+        <div style={{display:"flex",gap:12}}>
+          <div style={{flex:2}}>
+            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:5}}>Serviço</label>
+            <select value={form.service} onChange={e=>setForm(f=>({...f,service:e.target.value}))}
+              style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,background:"#fff",marginBottom:14}}>
+              {SERVICES.map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div style={{flex:1}}><FormField label="SF" value={form.square_footage} onChange={set("square_footage")} type="number" placeholder="88"/></div>
         </div>
         <div style={{display:"flex",gap:12}}>
           <div style={{flex:1,marginBottom:14}}>
@@ -295,7 +443,7 @@ function InstallerManager({ onClose }) {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState("");
+  const [msg, setMsg] = useState("");
 
   const load = async () => {
     const {data} = await supabase.from("installers").select("*").order("name");
@@ -305,15 +453,13 @@ function InstallerManager({ onClose }) {
   useEffect(()=>{ load(); },[]);
 
   const add = async () => {
-    if (!name||!password) { setToast("Preencha nome e senha."); return; }
+    if (!name||!password) { setMsg("Preencha nome e senha."); return; }
     setSaving(true);
     const {error} = await supabase.from("installers").insert([{name,password}]);
     setSaving(false);
-    if (error) { setToast("Erro: nome já existe."); return; }
-    setName(""); setPassword("");
-    setToast("Instalador cadastrado!");
-    load();
-    setTimeout(()=>setToast(""),3000);
+    if (error) { setMsg("Erro: nome já existe."); return; }
+    setName(""); setPassword(""); setMsg("Instalador cadastrado!");
+    load(); setTimeout(()=>setMsg(""),3000);
   };
 
   const remove = async (id) => {
@@ -328,15 +474,14 @@ function InstallerManager({ onClose }) {
       <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",
         maxWidth:480,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-          <div style={{fontSize:17,fontWeight:800}}>👷 Gerenciar Instaladores</div>
+          <div style={{fontSize:17,fontWeight:800}}>👷 Instaladores</div>
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#666"}}>×</button>
         </div>
-
-        {toast && <div style={{background:"#16A34A",color:"#fff",borderRadius:8,padding:"8px 14px",
-          fontSize:13,fontWeight:700,marginBottom:14}}>{toast}</div>}
-
+        {msg && <div style={{background:msg.includes("Erro")?"#FEF2F2":"#F0FDF4",
+          color:msg.includes("Erro")?"#DC2626":"#16A34A",
+          borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:700,marginBottom:14}}>{msg}</div>}
         <div style={{background:"#F9F7F4",borderRadius:12,padding:16,marginBottom:20}}>
-          <div style={{fontSize:13,fontWeight:700,marginBottom:12,color:"#1A1A1A"}}>Novo instalador</div>
+          <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Novo instalador</div>
           <FormField label="Nome" value={name} onChange={setName} placeholder="Ex: Alberth"/>
           <FormField label="Senha" value={password} onChange={setPassword} placeholder="Senha de acesso" type="password"/>
           <button onClick={add} disabled={saving} style={{width:"100%",background:"#B8924A",color:"#fff",
@@ -344,35 +489,29 @@ function InstallerManager({ onClose }) {
             {saving?"Salvando...":"+ Adicionar"}
           </button>
         </div>
-
         <div style={{fontSize:12,fontWeight:800,color:"#666",marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>
-          Instaladores cadastrados ({installers.length})
+          Cadastrados ({installers.length})
         </div>
-        {installers.length===0
-          ? <div style={{color:"#aaa",fontSize:13,textAlign:"center",padding:"20px 0"}}>Nenhum instalador cadastrado</div>
-          : installers.map(inst=>(
-            <div key={inst.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-              padding:"12px 14px",background:"#F9F7F4",borderRadius:10,marginBottom:8}}>
-              <div>
-                <div style={{fontSize:14,fontWeight:700}}>{inst.name}</div>
-                <div style={{fontSize:12,color:"#888"}}>Link: casa-luma-scheduler.vercel.app</div>
-              </div>
-              <button onClick={()=>remove(inst.id)} style={{background:"#FEF2F2",color:"#DC2626",
-                border:"1px solid #DC262633",borderRadius:8,padding:"4px 10px",
-                fontSize:12,cursor:"pointer",fontWeight:700}}>Remover</button>
-            </div>
-          ))
-        }
+        {installers.map(inst=>(
+          <div key={inst.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"12px 14px",background:"#F9F7F4",borderRadius:10,marginBottom:8}}>
+            <div style={{fontSize:14,fontWeight:700}}>{inst.name}</div>
+            <button onClick={()=>remove(inst.id)} style={{background:"#FEF2F2",color:"#DC2626",
+              border:"1px solid #DC262633",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer",fontWeight:700}}>
+              Remover
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
 // ─── DETAIL VIEW ─────────────────────────────────────────────────────
-function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, onSaveNotes, onShare, uploading }) {
+function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, onSaveNotes, uploading }) {
   const [notes, setNotes] = useState(job.completion_notes||"");
   const [savingNotes, setSavingNotes] = useState(false);
-  const isAdmin = session.role === "admin";
+  const isAdmin = session.role==="admin";
   const cfg = STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
   const adminPhotos = (job.photos||[]).filter(p=>p.type==="admin");
   const completionPhotos = (job.photos||[]).filter(p=>p.type==="completion");
@@ -388,17 +527,18 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
       <div style={{background:"#1A1A1A",borderRadius:14,padding:22,
         borderBottom:`4px solid ${cfg.color}`,marginBottom:14,color:"#fff"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
-          <div>
+          <div style={{flex:1}}>
             <div style={{fontSize:11,color:"#B8924A",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>{job.work_order}</div>
             <StatusBadge status={job.status}/>
-            <div style={{fontSize:18,fontWeight:900,color:"#fff",marginTop:8}}>{job.service}</div>
-            <div style={{fontSize:14,color:"#aaa",marginTop:2}}>{job.client}</div>
+            <div style={{fontSize:18,fontWeight:900,color:"#fff",marginTop:8}}>{job.client}</div>
+            {job.builder && <div style={{fontSize:13,color:"#B8924A",marginTop:2,fontWeight:600}}>💰 {job.builder}</div>}
+            <div style={{fontSize:14,color:"#aaa",marginTop:2}}>{job.service}</div>
           </div>
-          {isAdmin && (
-            <button onClick={()=>onShare(job)} style={{background:"#B8924A",color:"#fff",border:"none",
-              borderRadius:10,padding:"9px 16px",fontWeight:700,cursor:"pointer",fontSize:13}}>
-              🔗 Compartilhar
-            </button>
+          {job.square_footage && (
+            <div style={{background:"#B8924A",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
+              <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>{job.square_footage}</div>
+              <div style={{fontSize:10,color:"#fff",opacity:0.8,letterSpacing:1}}>SF</div>
+            </div>
           )}
         </div>
         <div style={{display:"flex",gap:16,marginTop:14,flexWrap:"wrap"}}>
@@ -438,8 +578,8 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:18,marginBottom:14}}>
         <SectionTitle>📸 Fotos do Local</SectionTitle>
         <PhotoGrid photos={adminPhotos} onDelete={p=>onDeletePhoto(p)} canDelete={isAdmin}/>
-        {isAdmin && <PhotoUpload onAdd={f=>onAddPhoto(job.id,"admin",f)} uploading={uploading}/>}
-        {adminPhotos.length===0 && <div style={{fontSize:13,color:"#aaa",marginTop:8}}>Nenhuma foto.</div>}
+        {isAdmin && <PhotoUploadBtn onAdd={f=>onAddPhoto(job.id,"admin",f)} uploading={uploading}/>}
+        {adminPhotos.length===0&&<div style={{fontSize:13,color:"#aaa",marginTop:8}}>Nenhuma foto.</div>}
       </div>
 
       {isAdmin && (
@@ -451,8 +591,9 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
                 background:job.status===key?cfg.color:cfg.bg,
                 color:job.status===key?"#fff":cfg.color,
                 border:`1px solid ${cfg.color}`,borderRadius:20,
-                padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",
-              }}>{cfg.label}</button>
+                padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                {cfg.label}
+              </button>
             ))}
           </div>
         </div>
@@ -460,12 +601,8 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
 
       <div style={{background:"#fff",borderRadius:14,border:"2px solid #16A34A33",padding:18,marginBottom:14}}>
         <SectionTitle>✅ Conclusão</SectionTitle>
-        <PhotoGrid
-          photos={completionPhotos}
-          onDelete={p=>onDeletePhoto(p)}
-          canDelete={true}
-        />
-        <PhotoUpload onAdd={f=>onAddPhoto(job.id,"completion",f)} uploading={uploading}/>
+        <PhotoGrid photos={completionPhotos} onDelete={p=>onDeletePhoto(p)} canDelete={true}/>
+        <PhotoUploadBtn onAdd={f=>onAddPhoto(job.id,"completion",f)} uploading={uploading}/>
         <div style={{marginTop:14}}>
           <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:6}}>Observações</label>
           <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={4}
@@ -475,16 +612,18 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
           <button onClick={handleSaveNotes} disabled={savingNotes} style={{
             marginTop:10,background:"#16A34A",color:"#fff",border:"none",
             borderRadius:8,padding:"9px 20px",fontWeight:700,cursor:"pointer",fontSize:13,
-            opacity:savingNotes?0.7:1,
-          }}>{savingNotes?"Salvando...":"💾 Salvar"}</button>
+            opacity:savingNotes?0.7:1}}>
+            {savingNotes?"Salvando...":"💾 Salvar"}
+          </button>
         </div>
       </div>
 
       {session.role==="installer" && job.status!=="completed" && (
         <button onClick={()=>onUpdateStatus(job.id,"completed")} style={{
           width:"100%",background:"#16A34A",color:"#fff",border:"none",
-          borderRadius:12,padding:16,fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:14,
-        }}>✅ Marcar como Concluído</button>
+          borderRadius:12,padding:16,fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:14}}>
+          ✅ Marcar como Concluído
+        </button>
       )}
     </div>
   );
@@ -493,12 +632,12 @@ function DetailView({ job, session, onUpdateStatus, onAddPhoto, onDeletePhoto, o
 // ─── MAIN APP ────────────────────────────────────────────────────────
 export default function App() {
   const [session, setSession] = useState(null);
-  const [view, setView] = useState("list");
+  const [tab, setTab] = useState("list"); // list | calendar
+  const [view, setView] = useState("main"); // main | detail
   const [jobs, setJobs] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showInstallers, setShowInstallers] = useState(false);
-  const [shareLink, setShareLink] = useState(null);
   const [toast, setToast] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(false);
@@ -514,7 +653,7 @@ export default function App() {
   const loadJobs = async () => {
     setLoading(true);
     let query = supabase.from("jobs").select("*").order("date",{ascending:true});
-    if (session?.role==="installer") query = query.eq("assigned_to", session.name);
+    if (session?.role==="installer") query = query.eq("assigned_to",session.name);
     const {data:jobsData,error} = await query;
     if (error) { showToast("Erro ao carregar","error"); setLoading(false); return; }
     const {data:photosData} = await supabase.from("job_photos").select("*");
@@ -528,7 +667,7 @@ export default function App() {
     if (data) setInstallerNames(data.map(i=>i.name));
   };
 
-  useEffect(()=>{ if(session) { loadJobs(); if(session.role==="admin") loadInstallerNames(); } },[session]);
+  useEffect(()=>{ if(session){ loadJobs(); if(session.role==="admin") loadInstallerNames(); } },[session]);
 
   const selectedJob = jobs.find(j=>j.id===selectedId);
   const filteredJobs = jobs.filter(j=>filterStatus==="all"||j.status===filterStatus);
@@ -538,8 +677,7 @@ export default function App() {
     const {data,error} = await supabase.from("jobs").insert([form]).select().single();
     if (error) { showToast("Erro ao salvar","error"); setSaving(false); return; }
     setJobs(prev=>[...prev,{...data,photos:[]}]);
-    setShowForm(false); setSaving(false);
-    showToast("Job criado!");
+    setShowForm(false); setSaving(false); showToast("Job criado!");
   };
 
   const updateStatus = async (id,status) => {
@@ -579,28 +717,26 @@ export default function App() {
     showToast("Salvo!");
   };
 
-  const generateShare = (job) => {
-    const link = `${window.location.origin}`;
-    setShareLink(`${link}\n\nJob: ${job.work_order}\nCliente: ${job.client}\nEndereço: ${job.address}\n\nInstalador acessa em:\n${link}`);
-    showToast("Link gerado!");
-  };
+  const openJob = (job) => { setSelectedId(job.id); setView("detail"); };
 
   if (!session) return <LoginScreen onLogin={setSession}/>;
 
   return (
-    <div style={{fontFamily:"'Inter',sans-serif",background:"#F9F7F4",minHeight:"100vh"}}>
+    <div style={{fontFamily:"'Inter',sans-serif",background:"#F9F7F4",minHeight:"100vh",paddingBottom:70}}>
+
+      {/* HEADER */}
       <div style={{background:"#1A1A1A",padding:"0 18px",display:"flex",alignItems:"center",
         justifyContent:"space-between",height:58,borderBottom:"3px solid #B8924A",
         position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:20,fontWeight:900,color:"#B8924A",letterSpacing:-1}}>CasaLuma</span>
-          <span style={{fontSize:10,color:"#555",letterSpacing:2,textTransform:"uppercase"}}>Field Scheduler</span>
+          <span style={{fontSize:10,color:"#555",letterSpacing:2,textTransform:"uppercase"}}>Field</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {session.role==="admin" && (
             <button onClick={()=>setShowInstallers(true)} style={{background:"#2A2A2A",color:"#B8924A",
               border:"1px solid #B8924A44",borderRadius:20,padding:"3px 12px",fontSize:11,cursor:"pointer",fontWeight:700}}>
-              👷 Instaladores
+              👷
             </button>
           )}
           <span style={{background:"#B8924A22",color:"#B8924A",border:"1px solid #B8924A44",
@@ -608,13 +744,14 @@ export default function App() {
             {session.role==="admin"?"⚙ Admin":`🔨 ${session.name}`}
           </span>
           {view==="detail" && (
-            <button onClick={()=>setView("list")} style={{background:"none",border:"1px solid #444",
+            <button onClick={()=>setView("main")} style={{background:"none",border:"1px solid #444",
               color:"#ccc",borderRadius:20,padding:"3px 12px",fontSize:11,cursor:"pointer"}}>← Voltar</button>
           )}
           <button onClick={()=>setSession(null)} style={{background:"none",border:"none",color:"#555",fontSize:18,cursor:"pointer"}}>↩</button>
         </div>
       </div>
 
+      {/* TOAST */}
       {toast && (
         <div style={{position:"fixed",top:68,right:16,zIndex:999,
           background:toast.type==="error"?"#DC2626":"#16A34A",
@@ -624,116 +761,9 @@ export default function App() {
         </div>
       )}
 
-      {shareLink && (
-        <div style={{position:"fixed",inset:0,background:"#00000066",
-          display:"flex",alignItems:"center",justifyContent:"center",zIndex:998}}
-          onClick={()=>setShareLink(null)}>
-          <div style={{background:"#fff",borderRadius:16,padding:26,maxWidth:420,width:"90%",
-            boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:15,fontWeight:800,marginBottom:10}}>🔗 Informações do Job</div>
-            <div style={{background:"#F3F4F6",borderRadius:8,padding:"12px 14px",
-              fontSize:13,color:"#374151",whiteSpace:"pre-line",border:"1px solid #E5E7EB",marginBottom:14}}>
-              {shareLink}
-            </div>
-            <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>{navigator.clipboard?.writeText(shareLink);showToast("Copiado!");setShareLink(null);}}
-                style={{flex:1,background:"#B8924A",color:"#fff",border:"none",
-                  borderRadius:8,padding:11,fontWeight:700,cursor:"pointer",fontSize:13}}>📋 Copiar</button>
-              <button onClick={()=>setShareLink(null)} style={{background:"#F3F4F6",color:"#374151",
-                border:"none",borderRadius:8,padding:"11px 16px",cursor:"pointer",fontSize:13}}>Fechar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div style={{maxWidth:880,margin:"0 auto",padding:"18px 14px"}}>
-        {view==="list" && (
-          <>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,flexWrap:"wrap",gap:12}}>
-              <div>
-                <div style={{fontSize:20,fontWeight:800,color:"#1A1A1A"}}>
-                  {session.role==="installer"?`Jobs de ${session.name}`:"Jobs"}
-                </div>
-                <div style={{fontSize:12,color:"#999"}}>{filteredJobs.length} trabalho(s)</div>
-              </div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                {["all","scheduled","in_progress","completed","cancelled"].map(s=>(
-                  <button key={s} onClick={()=>setFilterStatus(s)} style={{
-                    background:filterStatus===s?"#1A1A1A":"#fff",
-                    color:filterStatus===s?"#B8924A":"#666",
-                    border:`1px solid ${filterStatus===s?"#1A1A1A":"#E5E7EB"}`,
-                    borderRadius:20,padding:"4px 12px",fontSize:11,fontWeight:600,cursor:"pointer",
-                  }}>{s==="all"?"Todos":STATUS_CONFIG[s]?.label}</button>
-                ))}
-                <button onClick={loadJobs} style={{background:"#F3F4F6",color:"#555",
-                  border:"1px solid #E5E7EB",borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer"}}>↻</button>
-                {session.role==="admin" && (
-                  <button onClick={()=>setShowForm(true)} style={{background:"#B8924A",color:"#fff",
-                    border:"none",borderRadius:20,padding:"6px 16px",fontSize:12,fontWeight:800,cursor:"pointer"}}>
-                    + Novo Job
-                  </button>
-                )}
-              </div>
-            </div>
 
-            {loading ? (
-              <div style={{textAlign:"center",padding:"60px 20px",color:"#aaa"}}>
-                <div style={{fontSize:32,marginBottom:10}}>⏳</div>
-                <div style={{fontSize:14}}>Carregando...</div>
-              </div>
-            ) : filteredJobs.length===0 ? (
-              <div style={{textAlign:"center",padding:"60px 20px",color:"#bbb"}}>
-                <div style={{fontSize:44,marginBottom:10}}>📋</div>
-                <div style={{fontSize:15,fontWeight:600}}>Nenhum job encontrado</div>
-              </div>
-            ) : (
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {filteredJobs.map(job=>{
-                  const cfg=STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
-                  const completionCount=(job.photos||[]).filter(p=>p.type==="completion").length;
-                  const adminPhoto=(job.photos||[]).find(p=>p.type==="admin");
-                  return (
-                    <div key={job.id} onClick={()=>{setSelectedId(job.id);setView("detail");}} style={{
-                      background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",
-                      borderLeft:`4px solid ${cfg.color}`,padding:18,cursor:"pointer",
-                      boxShadow:"0 2px 8px rgba(0,0,0,0.04)",transition:"box-shadow 0.15s",
-                    }}
-                      onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"}
-                      onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.04)"}
-                    >
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
-                            <span style={{fontSize:11,fontWeight:800,color:"#B8924A",letterSpacing:1}}>{job.work_order}</span>
-                            <StatusBadge status={job.status}/>
-                          </div>
-                          <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
-                          <div style={{fontSize:13,color:"#666",marginBottom:6,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                            📍 {job.address}
-                          </div>
-                          <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-                            <span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span>
-                            <span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>
-                            {job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}
-                          </div>
-                          <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
-                            {job.client_phone&&<span style={{fontSize:11,color:"#2563EB",background:"#EFF6FF",borderRadius:10,padding:"2px 8px",fontWeight:600}}>📞 Cliente</span>}
-                            {completionCount>0&&<span style={{fontSize:11,color:"#16A34A",background:"#F0FDF4",borderRadius:10,padding:"2px 8px",fontWeight:600}}>✅ {completionCount} foto(s)</span>}
-                          </div>
-                        </div>
-                        {adminPhoto && (
-                          <img src={adminPhoto.url} alt="" style={{width:76,height:62,objectFit:"cover",
-                            borderRadius:8,border:"2px solid #E5E7EB",flexShrink:0}}/>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-
+        {/* DETAIL VIEW */}
         {view==="detail" && selectedJob && (
           <DetailView
             job={selectedJob} session={session}
@@ -741,16 +771,136 @@ export default function App() {
             onAddPhoto={addPhoto}
             onDeletePhoto={deletePhoto}
             onSaveNotes={saveNotes}
-            onShare={generateShare}
             uploading={uploading}
           />
         )}
+
+        {/* MAIN VIEWS */}
+        {view==="main" && (
+          <>
+            {/* LIST TAB */}
+            {tab==="list" && (
+              <>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,flexWrap:"wrap",gap:12}}>
+                  <div>
+                    <div style={{fontSize:20,fontWeight:800,color:"#1A1A1A"}}>
+                      {session.role==="installer"?`Jobs de ${session.name}`:"Todos os Jobs"}
+                    </div>
+                    <div style={{fontSize:12,color:"#999"}}>{filteredJobs.length} trabalho(s)</div>
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                    {["all","scheduled","in_progress","completed","cancelled"].map(s=>(
+                      <button key={s} onClick={()=>setFilterStatus(s)} style={{
+                        background:filterStatus===s?"#1A1A1A":"#fff",
+                        color:filterStatus===s?"#B8924A":"#666",
+                        border:`1px solid ${filterStatus===s?"#1A1A1A":"#E5E7EB"}`,
+                        borderRadius:20,padding:"4px 12px",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                        {s==="all"?"Todos":STATUS_CONFIG[s]?.label}
+                      </button>
+                    ))}
+                    <button onClick={loadJobs} style={{background:"#F3F4F6",color:"#555",
+                      border:"1px solid #E5E7EB",borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer"}}>↻</button>
+                    {session.role==="admin" && (
+                      <button onClick={()=>setShowForm(true)} style={{background:"#B8924A",color:"#fff",
+                        border:"none",borderRadius:20,padding:"6px 16px",fontSize:12,fontWeight:800,cursor:"pointer"}}>
+                        + Novo Job
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {loading ? (
+                  <div style={{textAlign:"center",padding:"60px 20px",color:"#aaa"}}>
+                    <div style={{fontSize:32,marginBottom:10}}>⏳</div>
+                    <div>Carregando...</div>
+                  </div>
+                ) : filteredJobs.length===0 ? (
+                  <div style={{textAlign:"center",padding:"60px 20px",color:"#bbb"}}>
+                    <div style={{fontSize:44,marginBottom:10}}>📋</div>
+                    <div style={{fontSize:15,fontWeight:600}}>Nenhum job encontrado</div>
+                  </div>
+                ) : (
+                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                    {filteredJobs.map(job=>{
+                      const cfg=STATUS_CONFIG[job.status]||STATUS_CONFIG.scheduled;
+                      const completionCount=(job.photos||[]).filter(p=>p.type==="completion").length;
+                      const adminPhoto=(job.photos||[]).find(p=>p.type==="admin");
+                      return (
+                        <div key={job.id} onClick={()=>openJob(job)} style={{
+                          background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",
+                          borderLeft:`4px solid ${cfg.color}`,padding:18,cursor:"pointer",
+                          boxShadow:"0 2px 8px rgba(0,0,0,0.04)",transition:"box-shadow 0.15s",
+                        }}
+                          onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"}
+                          onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.04)"}
+                        >
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+                                <span style={{fontSize:11,fontWeight:800,color:"#B8924A",letterSpacing:1}}>{job.work_order}</span>
+                                <StatusBadge status={job.status}/>
+                                {job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",
+                                  borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}
+                              </div>
+                              <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
+                              {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
+                              <div style={{fontSize:13,color:"#666",marginBottom:6,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                                📍 {job.address}
+                              </div>
+                              <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+                                <span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span>
+                                <span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>
+                                {job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}
+                              </div>
+                              <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+                                {job.client_phone&&<span style={{fontSize:11,color:"#2563EB",background:"#EFF6FF",borderRadius:10,padding:"2px 8px",fontWeight:600}}>📞 Cliente</span>}
+                                {completionCount>0&&<span style={{fontSize:11,color:"#16A34A",background:"#F0FDF4",borderRadius:10,padding:"2px 8px",fontWeight:600}}>✅ {completionCount} foto(s)</span>}
+                              </div>
+                            </div>
+                            {adminPhoto&&(
+                              <img src={adminPhoto.url} alt="" style={{width:76,height:62,objectFit:"cover",
+                                borderRadius:8,border:"2px solid #E5E7EB",flexShrink:0}}/>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* CALENDAR TAB */}
+            {tab==="calendar" && (
+              <CalendarView jobs={jobs} onSelectJob={openJob}/>
+            )}
+          </>
+        )}
       </div>
+
+      {/* BOTTOM NAV */}
+      {view==="main" && (
+        <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#1A1A1A",
+          borderTop:"2px solid #B8924A",display:"flex",zIndex:100}}>
+          {[
+            {id:"list",icon:"📋",label:"Jobs"},
+            {id:"calendar",icon:"📅",label:"Calendário"},
+          ].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+              flex:1,padding:"12px 8px",background:"none",border:"none",cursor:"pointer",
+              display:"flex",flexDirection:"column",alignItems:"center",gap:3,
+            }}>
+              <span style={{fontSize:20}}>{t.icon}</span>
+              <span style={{fontSize:11,fontWeight:700,
+                color:tab===t.id?"#B8924A":"#555"}}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {showForm && session.role==="admin" && (
         <JobForm onSave={saveJob} onCancel={()=>setShowForm(false)} saving={saving} installerNames={installerNames}/>
       )}
-
       {showInstallers && <InstallerManager onClose={()=>{setShowInstallers(false);loadInstallerNames();}}/>}
     </div>
   );
