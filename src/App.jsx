@@ -493,7 +493,7 @@ function Reports({session,t,showToast}) {
     setLoading(true);
     let q=db.from("jobs").select("*").gte("date",from).lte("date",to).order("date",{ascending:true});
     if(session.role==="admin") q=q.eq("company",company);
-    if(session.role==="installer") q=q.eq("assigned_to",session.name);
+    if(session.role==="installer") q=q.or(`installer.eq.${session.name},assigned_to.eq.${session.name}`);
     if(session.role==="salesperson") q=q.eq("salesperson",session.name);
     const {data}=await q; setReport(data||[]); setLoading(false);
   };
@@ -822,7 +822,7 @@ export default function App() {
     setLoading(true);
     let q=db.from("jobs").select("*").order("date",{ascending:true});
     if(session.role==="admin") q=q.eq("company",session.company);
-    if(session.role==="installer") q=q.eq("assigned_to",session.name);
+    if(session.role==="installer") q=q.or(`installer.eq.${session.name},assigned_to.eq.${session.name}`);
     if(session.role==="salesperson") q=q.eq("salesperson",session.name);
     const {data:jd,error}=await q; if(error){showToast(t.toasts.errLoad,"error");setLoading(false);return;}
     const {data:pd}=await db.from("job_photos").select("*"); const photos=pd||[];
