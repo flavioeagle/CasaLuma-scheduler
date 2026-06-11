@@ -10,63 +10,50 @@ const SC = { scheduled:"#B8924A", in_progress:"#2563EB", completed:"#16A34A", ca
 const SB = { scheduled:"#FDF6EC", in_progress:"#EFF6FF", completed:"#F0FDF4", cancelled:"#FEF2F2" };
 const SERVICES = ["Countertop Installation","Cabinet Installation","Kitchen Remodeling","Flooring","Tile Work","Bathroom Remodel","Other"];
 
-// ─── i18n ─────────────────────────────────────────────────────────────
+const DEFAULT_PRICING_ITEMS = [
+  { id:"base_sf", name:"Installation (per SF)", price:45, type:"per_sf" },
+  { id:"tile_bs_removal", name:"Tile Backsplash Removal", price:2, type:"per_sf" },
+  { id:"tile_ct_removal", name:"Tile Countertop Removal", price:6, type:"per_sf" },
+  { id:"granite_removal", name:"Granite Countertop Removal", price:2, type:"per_sf" },
+  { id:"outlet_cutout", name:"Outlet Cutout(s)", price:10, type:"per_unit" },
+  { id:"second_trip", name:"Second Trip Cutout", price:100, type:"flat" },
+  { id:"second_trip_drill", name:"Second Trip Drilling Holes", price:75, type:"flat" },
+  { id:"fixing_chips", name:"Fixing Chips", price:75, type:"flat" },
+  { id:"metal_brackets", name:"Metal Invisible Brackets", price:10, type:"per_unit" },
+  { id:"missing_sink", name:"Install Missing Sink", price:150, type:"flat" },
+  { id:"trip_charge", name:"Trip Charge (>50 miles)", price:1.5, type:"per_mile" },
+  { id:"waterfall", name:"Waterfall Panel", price:15, type:"flat" },
+  { id:"plumbing_removal", name:"Plumbing Removal", price:50, type:"per_unit" },
+  { id:"min_charge", name:"Less than 15 SqFt Charge", price:50, type:"flat" },
+  { id:"install_issue", name:"Issue with Install Charge", price:75, type:"flat" },
+];
+
 const T = {
-  pt:{ appSub:"Field Scheduler", owner:"Owner", ownerSub:"Acesso total", admin:"Admin", adminSub:"Gerenciar empresa", installer:"Instalador", installerSub:"Ver meus jobs", loginOwner:"Login Owner", loginAdmin:"Login Admin", loginInstaller:"Login Instalador", yourName:"Seu nome", selectName:"Selecione...", password:"Senha", wrongPassword:"Senha incorreta.", wrongCredentials:"Nome ou senha incorretos.", selectName2:"Selecione seu nome.", enterPassword:"Digite sua senha.", verifying:"Verificando...", enter:"Entrar", back:"← Voltar",
-    jobs:"Jobs", calendar:"Calendário", companies:"Empresas", contacts:"Contatos",
-    allJobs:"Todos os Jobs", myJobs:"Jobs de", work:"trabalho(s)", noJobs:"Nenhum job", loading:"Carregando...",
-    all:"Todos", scheduled:"Agendado", inProgress:"Em Andamento", completed:"Concluído", cancelled:"Cancelado",
-    newJob:"+ Novo Job", editJob:"✏️ Editar", createJob:"➕ Novo Job", saveChanges:"Salvar", createBtn:"Criar", saving:"Salvando...", cancel:"Cancelar", edit:"✏️", delete:"🗑️",
-    workOrder:"Nº Trabalho *", client:"Cliente *", clientPhone:"Tel. Cliente", builder:"Builder", address:"Endereço *", accessNotes:"Acesso", accessPH:"Código do portão...", date:"Data *", time:"Hora", service:"Serviço", sf:"SF", installerF:"Instalador", installerPhone:"Tel. Instalador", estHours:"Horas", status:"Status", scope:"Escopo", scopePH:"Descreva o trabalho...",
-    contactsT:"📞 Contatos", addrAccess:"📍 Endereço", accessLbl:"ACESSO", scopeT:"📋 Escopo", sitePhotos:"📸 Fotos", noPhoto:"Nenhuma foto.", statusT:"⚙️ Status", conclusion:"✅ Conclusão", notesLbl:"Observações", notesPH:"Como foi o trabalho...", saveNotes:"💾 Salvar", markDone:"✅ Concluído",
-    manageAdmins:"⚙️ Admins", newAdmin:"Novo Admin", adminName:"Nome", company:"Empresa", addBtn:"+ Adicionar", registered:"Cadastrados", remove:"Remover",
-    manageInstallers:"👷 Instaladores", newInstaller:"Novo Instalador", installerName:"Nome", addInstaller:"+ Adicionar",
-    confirmDelJob:"Excluir job?", confirmDelContact:"Remover cadastro?", confirmDelContract:"Remover contrato?", confirmDelAdmin:"Remover admin?", confirmDelInstaller:"Remover instalador?",
-    jobCreated:"Job criado!", jobUpdated:"Job atualizado!", jobDeleted:"Job excluído!", statusUpdated:"Status atualizado!", photoSent:"Foto enviada!", photoRemoved:"Foto removida!", saved:"Salvo!", adminAdded:"Admin cadastrado!", installerAdded:"Instalador adicionado!", contactSaved:"Contato salvo!", contactDeleted:"Contato removido!", errLoad:"Erro ao carregar", errSave:"Erro ao salvar", errPhoto:"Erro na foto", errDup:"Nome já existe.", fillAll:"Preencha todos os campos.", fillReq:"Preencha campos obrigatórios.", removePhoto:"Remover foto?",
-    ctClients:"👤 Clientes", ctBuilders:"🏗️ Builders", ctContracts:"📄 Contratos", ctContractors:"🔧 Prestadores",
-    newContact:"+ Novo", name:"Nome *", phone:"Telefone", email:"Email", addr:"Endereço", notes:"Notas", contactCo:"Empresa *", contactPerson:"Contato", svcType:"Serviço",
-    contractTitle:"Título *", relatedTo:"Relacionado a", uploadFile:"📎 Anexar arquivo", noContacts:"Nenhum cadastro.", viewFile:"📄 Ver arquivo", noFile:"Sem arquivo",
-    // companies tab
-    companiesTitle:"🏢 Empresas", noCompanies:"Nenhuma empresa cadastrada.", activeJobs:"jobs ativos", totalJobs:"jobs no total", installers:"instaladores", clients:"clientes",
-    companyDetail:"Detalhes da Empresa", companyJobs:"Jobs", companyInstallers:"Instaladores", companyClients:"Clientes",
+  pt:{ appSub:"Field Scheduler", owner:"Owner", ownerSub:"Acesso total", admin:"Admin", adminSub:"Gerenciar empresa", installer:"Instalador", installerSub:"Ver meus jobs", loginOwner:"Login Owner", loginAdmin:"Login Admin", loginInstaller:"Login Instalador", yourName:"Seu nome", selectName:"Selecione...", password:"Senha", wrongPassword:"Senha incorreta.", wrongCredentials:"Nome ou senha incorretos.", selectName2:"Selecione seu nome.", enterPassword:"Digite sua senha.", verifying:"Verificando...", enter:"Entrar", back:"← Voltar", jobs:"Jobs", calendar:"Calendário", companies:"Empresas", contacts:"Contatos", reports:"Relatórios", allJobs:"Todos os Jobs", myJobs:"Jobs de", work:"trabalho(s)", noJobs:"Nenhum job", loading:"Carregando...", all:"Todos", scheduled:"Agendado", inProgress:"Em Andamento", completed:"Concluído", cancelled:"Cancelado", newJob:"+ Novo Job", editJob:"✏️ Editar", createJob:"➕ Novo Job", saveChanges:"Salvar", createBtn:"Criar", saving:"Salvando...", cancel:"Cancelar", edit:"✏️", delete:"🗑️", workOrder:"Nº Trabalho *", client:"Cliente *", clientPhone:"Tel. Cliente", builder:"Builder", address:"Endereço *", accessNotes:"Acesso", accessPH:"Código do portão...", date:"Data *", time:"Hora", service:"Serviço", sf:"SF", installerF:"Instalador", installerPhone:"Tel. Instalador", estHours:"Horas", status:"Status", scope:"Escopo", scopePH:"Descreva o trabalho...", contactsT:"📞 Contatos", addrAccess:"📍 Endereço", accessLbl:"ACESSO", scopeT:"📋 Escopo", sitePhotos:"📸 Fotos", noPhoto:"Nenhuma foto.", statusT:"⚙️ Status", conclusion:"✅ Conclusão", notesLbl:"Observações", notesPH:"Como foi o trabalho...", saveNotes:"💾 Salvar", markDone:"✅ Concluído", manageAdmins:"⚙️ Admins", newAdmin:"Novo Admin", adminName:"Nome", company:"Empresa", addBtn:"+ Adicionar", registered:"Cadastrados", remove:"Remover", manageInstallers:"👷 Instaladores", newInstaller:"Novo Instalador", installerName:"Nome", addInstaller:"+ Adicionar", confirmDelJob:"Excluir job?", confirmDelContact:"Remover cadastro?", confirmDelContract:"Remover contrato?", confirmDelAdmin:"Remover admin?", confirmDelInstaller:"Remover instalador?", jobCreated:"Job criado!", jobUpdated:"Job atualizado!", jobDeleted:"Job excluído!", statusUpdated:"Status atualizado!", photoSent:"Foto enviada!", photoRemoved:"Foto removida!", saved:"Salvo!", adminAdded:"Admin cadastrado!", installerAdded:"Instalador adicionado!", contactSaved:"Contato salvo!", contactDeleted:"Contato removido!", errLoad:"Erro ao carregar", errSave:"Erro ao salvar", errPhoto:"Erro na foto", errDup:"Nome já existe.", fillAll:"Preencha todos os campos.", fillReq:"Preencha campos obrigatórios.", removePhoto:"Remover foto?",
+    ctClients:"👤 Clientes", ctBuilders:"🏗️ Builders", ctContracts:"📄 Contratos", ctContractors:"🔧 Prestadores", newContact:"+ Novo", name:"Nome *", phone:"Telefone", email:"Email", addr:"Endereço", notes:"Notas", contactCo:"Empresa *", contactPerson:"Contato", svcType:"Serviço", contractTitle:"Título *", relatedTo:"Relacionado a", uploadFile:"📎 Anexar arquivo", noContacts:"Nenhum cadastro.", viewFile:"📄 Ver arquivo", noFile:"Sem arquivo",
+    companiesTitle:"🏢 Empresas", noCompanies:"Nenhuma empresa.", activeJobs:"ativos", totalJobs:"total", installers:"instaladores",
+    companyJobs:"Jobs", companyInstallers:"Instaladores", companyClients:"Contatos",
+    // reports
+    reportTitle:"📊 Relatório", periodFrom:"De", periodTo:"Até", generateReport:"Gerar Relatório", generating:"Gerando...", reportSummary:"Resumo do Período", totalJobs2:"Total de Jobs", completedJobs:"Concluídos", totalSF:"Total SF", estimatedRevenue:"Faturamento Estimado", jobsList:"Lista de Jobs", printReport:"🖨️ Imprimir", noReportData:"Nenhum job no período selecionado.", extrasTitle:"Itens Adicionais", addExtra:"+ Adicionar Item", extraItem:"Item", extraQty:"Qtd", extraTotal:"Total",
+    pricingTitle:"💰 Tabela de Preços", baseSF:"Preço Base por SF ($)", savePricing:"Salvar Preços", pricingSaved:"Preços salvos!",
     months:["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"],
     days:["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"],
   },
-  en:{ appSub:"Field Scheduler", owner:"Owner", ownerSub:"Full access", admin:"Admin", adminSub:"Manage company", installer:"Installer", installerSub:"View my jobs", loginOwner:"Owner Login", loginAdmin:"Admin Login", loginInstaller:"Installer Login", yourName:"Your name", selectName:"Select...", password:"Password", wrongPassword:"Incorrect password.", wrongCredentials:"Wrong name or password.", selectName2:"Select your name.", enterPassword:"Enter password.", verifying:"Verifying...", enter:"Sign In", back:"← Back",
-    jobs:"Jobs", calendar:"Calendar", companies:"Companies", contacts:"Contacts",
-    allJobs:"All Jobs", myJobs:"Jobs for", work:"job(s)", noJobs:"No jobs found", loading:"Loading...",
-    all:"All", scheduled:"Scheduled", inProgress:"In Progress", completed:"Completed", cancelled:"Cancelled",
-    newJob:"+ New Job", editJob:"✏️ Edit", createJob:"➕ New Job", saveChanges:"Save", createBtn:"Create", saving:"Saving...", cancel:"Cancel", edit:"✏️", delete:"🗑️",
-    workOrder:"Work Order *", client:"Client *", clientPhone:"Client Phone", builder:"Builder", address:"Address *", accessNotes:"Access", accessPH:"Gate code...", date:"Date *", time:"Time", service:"Service", sf:"SF", installerF:"Installer", installerPhone:"Installer Phone", estHours:"Hours", status:"Status", scope:"Scope", scopePH:"Describe the work...",
-    contactsT:"📞 Contacts", addrAccess:"📍 Address", accessLbl:"ACCESS", scopeT:"📋 Scope", sitePhotos:"📸 Photos", noPhoto:"No photos.", statusT:"⚙️ Status", conclusion:"✅ Completion", notesLbl:"Notes", notesPH:"Describe the job...", saveNotes:"💾 Save", markDone:"✅ Mark Complete",
-    manageAdmins:"⚙️ Admins", newAdmin:"New Admin", adminName:"Name", company:"Company", addBtn:"+ Add", registered:"Registered", remove:"Remove",
-    manageInstallers:"👷 Installers", newInstaller:"New Installer", installerName:"Name", addInstaller:"+ Add",
-    confirmDelJob:"Delete job?", confirmDelContact:"Remove record?", confirmDelContract:"Remove contract?", confirmDelAdmin:"Remove admin?", confirmDelInstaller:"Remove installer?",
-    jobCreated:"Job created!", jobUpdated:"Job updated!", jobDeleted:"Job deleted!", statusUpdated:"Status updated!", photoSent:"Photo sent!", photoRemoved:"Photo removed!", saved:"Saved!", adminAdded:"Admin added!", installerAdded:"Installer added!", contactSaved:"Contact saved!", contactDeleted:"Contact removed!", errLoad:"Error loading", errSave:"Error saving", errPhoto:"Photo error", errDup:"Name already exists.", fillAll:"Fill all fields.", fillReq:"Fill required fields.", removePhoto:"Remove photo?",
-    ctClients:"👤 Clients", ctBuilders:"🏗️ Builders", ctContracts:"📄 Contracts", ctContractors:"🔧 Contractors",
-    newContact:"+ New", name:"Name *", phone:"Phone", email:"Email", addr:"Address", notes:"Notes", contactCo:"Company *", contactPerson:"Contact", svcType:"Service",
-    contractTitle:"Title *", relatedTo:"Related to", uploadFile:"📎 Attach file", noContacts:"No records.", viewFile:"📄 View file", noFile:"No file",
-    companiesTitle:"🏢 Companies", noCompanies:"No companies yet.", activeJobs:"active jobs", totalJobs:"total jobs", installers:"installers", clients:"clients",
-    companyDetail:"Company Details", companyJobs:"Jobs", companyInstallers:"Installers", companyClients:"Clients",
+  en:{ appSub:"Field Scheduler", owner:"Owner", ownerSub:"Full access", admin:"Admin", adminSub:"Manage company", installer:"Installer", installerSub:"View my jobs", loginOwner:"Owner Login", loginAdmin:"Admin Login", loginInstaller:"Installer Login", yourName:"Your name", selectName:"Select...", password:"Password", wrongPassword:"Incorrect password.", wrongCredentials:"Wrong credentials.", selectName2:"Select your name.", enterPassword:"Enter password.", verifying:"Verifying...", enter:"Sign In", back:"← Back", jobs:"Jobs", calendar:"Calendar", companies:"Companies", contacts:"Contacts", reports:"Reports", allJobs:"All Jobs", myJobs:"Jobs for", work:"job(s)", noJobs:"No jobs", loading:"Loading...", all:"All", scheduled:"Scheduled", inProgress:"In Progress", completed:"Completed", cancelled:"Cancelled", newJob:"+ New Job", editJob:"✏️ Edit", createJob:"➕ New Job", saveChanges:"Save", createBtn:"Create", saving:"Saving...", cancel:"Cancel", edit:"✏️", delete:"🗑️", workOrder:"Work Order *", client:"Client *", clientPhone:"Client Phone", builder:"Builder", address:"Address *", accessNotes:"Access", accessPH:"Gate code...", date:"Date *", time:"Time", service:"Service", sf:"SF", installerF:"Installer", installerPhone:"Installer Phone", estHours:"Hours", status:"Status", scope:"Scope", scopePH:"Describe the work...", contactsT:"📞 Contacts", addrAccess:"📍 Address", accessLbl:"ACCESS", scopeT:"📋 Scope", sitePhotos:"📸 Photos", noPhoto:"No photos.", statusT:"⚙️ Status", conclusion:"✅ Completion", notesLbl:"Notes", notesPH:"Describe the job...", saveNotes:"💾 Save", markDone:"✅ Mark Complete", manageAdmins:"⚙️ Admins", newAdmin:"New Admin", adminName:"Name", company:"Company", addBtn:"+ Add", registered:"Registered", remove:"Remove", manageInstallers:"👷 Installers", newInstaller:"New Installer", installerName:"Name", addInstaller:"+ Add", confirmDelJob:"Delete job?", confirmDelContact:"Remove record?", confirmDelContract:"Remove contract?", confirmDelAdmin:"Remove admin?", confirmDelInstaller:"Remove installer?", jobCreated:"Job created!", jobUpdated:"Job updated!", jobDeleted:"Job deleted!", statusUpdated:"Status updated!", photoSent:"Photo sent!", photoRemoved:"Photo removed!", saved:"Saved!", adminAdded:"Admin added!", installerAdded:"Installer added!", contactSaved:"Contact saved!", contactDeleted:"Contact removed!", errLoad:"Error loading", errSave:"Error saving", errPhoto:"Photo error", errDup:"Name exists.", fillAll:"Fill all fields.", fillReq:"Fill required fields.", removePhoto:"Remove photo?",
+    ctClients:"👤 Clients", ctBuilders:"🏗️ Builders", ctContracts:"📄 Contracts", ctContractors:"🔧 Contractors", newContact:"+ New", name:"Name *", phone:"Phone", email:"Email", addr:"Address", notes:"Notes", contactCo:"Company *", contactPerson:"Contact", svcType:"Service", contractTitle:"Title *", relatedTo:"Related to", uploadFile:"📎 Attach file", noContacts:"No records.", viewFile:"📄 View file", noFile:"No file",
+    companiesTitle:"🏢 Companies", noCompanies:"No companies.", activeJobs:"active", totalJobs:"total", installers:"installers",
+    companyJobs:"Jobs", companyInstallers:"Installers", companyClients:"Contacts",
+    reportTitle:"📊 Report", periodFrom:"From", periodTo:"To", generateReport:"Generate Report", generating:"Generating...", reportSummary:"Period Summary", totalJobs2:"Total Jobs", completedJobs:"Completed", totalSF:"Total SF", estimatedRevenue:"Estimated Revenue", jobsList:"Jobs List", printReport:"🖨️ Print", noReportData:"No jobs in selected period.", extrasTitle:"Additional Items", addExtra:"+ Add Item", extraItem:"Item", extraQty:"Qty", extraTotal:"Total",
+    pricingTitle:"💰 Pricing Table", baseSF:"Base Price per SF ($)", savePricing:"Save Prices", pricingSaved:"Prices saved!",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
     days:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
   },
-  es:{ appSub:"Programador", owner:"Propietario", ownerSub:"Acceso total", admin:"Admin", adminSub:"Gestionar empresa", installer:"Instalador", installerSub:"Ver mis trabajos", loginOwner:"Acceso Propietario", loginAdmin:"Acceso Admin", loginInstaller:"Acceso Instalador", yourName:"Tu nombre", selectName:"Seleccionar...", password:"Contraseña", wrongPassword:"Contraseña incorrecta.", wrongCredentials:"Nombre o contraseña incorrectos.", selectName2:"Selecciona tu nombre.", enterPassword:"Ingresa contraseña.", verifying:"Verificando...", enter:"Entrar", back:"← Volver",
-    jobs:"Trabajos", calendar:"Calendario", companies:"Empresas", contacts:"Contactos",
-    allJobs:"Todos los Trabajos", myJobs:"Trabajos de", work:"trabajo(s)", noJobs:"Sin trabajos", loading:"Cargando...",
-    all:"Todos", scheduled:"Programado", inProgress:"En Progreso", completed:"Completado", cancelled:"Cancelado",
-    newJob:"+ Nuevo", editJob:"✏️ Editar", createJob:"➕ Nuevo", saveChanges:"Guardar", createBtn:"Crear", saving:"Guardando...", cancel:"Cancelar", edit:"✏️", delete:"🗑️",
-    workOrder:"Nº Trabajo *", client:"Cliente *", clientPhone:"Tel. Cliente", builder:"Constructor", address:"Dirección *", accessNotes:"Acceso", accessPH:"Código de puerta...", date:"Fecha *", time:"Hora", service:"Servicio", sf:"SF", installerF:"Instalador", installerPhone:"Tel. Instalador", estHours:"Horas", status:"Estado", scope:"Alcance", scopePH:"Describe el trabajo...",
-    contactsT:"📞 Contactos", addrAccess:"📍 Dirección", accessLbl:"ACCESO", scopeT:"📋 Alcance", sitePhotos:"📸 Fotos", noPhoto:"Sin fotos.", statusT:"⚙️ Estado", conclusion:"✅ Finalización", notesLbl:"Observaciones", notesPH:"Describe el trabajo...", saveNotes:"💾 Guardar", markDone:"✅ Completado",
-    manageAdmins:"⚙️ Admins", newAdmin:"Nuevo Admin", adminName:"Nombre", company:"Empresa", addBtn:"+ Agregar", registered:"Registrados", remove:"Eliminar",
-    manageInstallers:"👷 Instaladores", newInstaller:"Nuevo Instalador", installerName:"Nombre", addInstaller:"+ Agregar",
-    confirmDelJob:"¿Eliminar trabajo?", confirmDelContact:"¿Eliminar registro?", confirmDelContract:"¿Eliminar contrato?", confirmDelAdmin:"¿Eliminar admin?", confirmDelInstaller:"¿Eliminar instalador?",
-    jobCreated:"¡Trabajo creado!", jobUpdated:"¡Trabajo actualizado!", jobDeleted:"¡Trabajo eliminado!", statusUpdated:"¡Estado actualizado!", photoSent:"¡Foto enviada!", photoRemoved:"¡Foto eliminada!", saved:"¡Guardado!", adminAdded:"¡Admin registrado!", installerAdded:"¡Instalador agregado!", contactSaved:"¡Contacto guardado!", contactDeleted:"¡Contacto eliminado!", errLoad:"Error al cargar", errSave:"Error al guardar", errPhoto:"Error en foto", errDup:"El nombre ya existe.", fillAll:"Complete todos los campos.", fillReq:"Complete campos requeridos.", removePhoto:"¿Eliminar foto?",
-    ctClients:"👤 Clientes", ctBuilders:"🏗️ Constructores", ctContracts:"📄 Contratos", ctContractors:"🔧 Contratistas",
-    newContact:"+ Nuevo", name:"Nombre *", phone:"Teléfono", email:"Email", addr:"Dirección", notes:"Notas", contactCo:"Empresa *", contactPerson:"Contacto", svcType:"Servicio",
-    contractTitle:"Título *", relatedTo:"Relacionado con", uploadFile:"📎 Adjuntar", noContacts:"Sin registros.", viewFile:"📄 Ver archivo", noFile:"Sin archivo",
-    companiesTitle:"🏢 Empresas", noCompanies:"Sin empresas.", activeJobs:"trabajos activos", totalJobs:"trabajos total", installers:"instaladores", clients:"clientes",
-    companyDetail:"Detalles de la Empresa", companyJobs:"Trabajos", companyInstallers:"Instaladores", companyClients:"Clientes",
+  es:{ appSub:"Programador", owner:"Propietario", ownerSub:"Acceso total", admin:"Admin", adminSub:"Gestionar empresa", installer:"Instalador", installerSub:"Ver mis trabajos", loginOwner:"Acceso Propietario", loginAdmin:"Acceso Admin", loginInstaller:"Acceso Instalador", yourName:"Tu nombre", selectName:"Seleccionar...", password:"Contraseña", wrongPassword:"Contraseña incorrecta.", wrongCredentials:"Credenciales incorrectas.", selectName2:"Selecciona tu nombre.", enterPassword:"Ingresa contraseña.", verifying:"Verificando...", enter:"Entrar", back:"← Volver", jobs:"Trabajos", calendar:"Calendario", companies:"Empresas", contacts:"Contactos", reports:"Reportes", allJobs:"Todos", myJobs:"Trabajos de", work:"trabajo(s)", noJobs:"Sin trabajos", loading:"Cargando...", all:"Todos", scheduled:"Programado", inProgress:"En Progreso", completed:"Completado", cancelled:"Cancelado", newJob:"+ Nuevo", editJob:"✏️ Editar", createJob:"➕ Nuevo", saveChanges:"Guardar", createBtn:"Crear", saving:"Guardando...", cancel:"Cancelar", edit:"✏️", delete:"🗑️", workOrder:"Nº Trabajo *", client:"Cliente *", clientPhone:"Tel. Cliente", builder:"Constructor", address:"Dirección *", accessNotes:"Acceso", accessPH:"Código de puerta...", date:"Fecha *", time:"Hora", service:"Servicio", sf:"SF", installerF:"Instalador", installerPhone:"Tel. Instalador", estHours:"Horas", status:"Estado", scope:"Alcance", scopePH:"Describe el trabajo...", contactsT:"📞 Contactos", addrAccess:"📍 Dirección", accessLbl:"ACCESO", scopeT:"📋 Alcance", sitePhotos:"📸 Fotos", noPhoto:"Sin fotos.", statusT:"⚙️ Estado", conclusion:"✅ Finalización", notesLbl:"Observaciones", notesPH:"Describe el trabajo...", saveNotes:"💾 Guardar", markDone:"✅ Completado", manageAdmins:"⚙️ Admins", newAdmin:"Nuevo Admin", adminName:"Nombre", company:"Empresa", addBtn:"+ Agregar", registered:"Registrados", remove:"Eliminar", manageInstallers:"👷 Instaladores", newInstaller:"Nuevo Instalador", installerName:"Nombre", addInstaller:"+ Agregar", confirmDelJob:"¿Eliminar trabajo?", confirmDelContact:"¿Eliminar registro?", confirmDelContract:"¿Eliminar contrato?", confirmDelAdmin:"¿Eliminar admin?", confirmDelInstaller:"¿Eliminar instalador?", jobCreated:"¡Trabajo creado!", jobUpdated:"¡Trabajo actualizado!", jobDeleted:"¡Trabajo eliminado!", statusUpdated:"¡Estado actualizado!", photoSent:"¡Foto enviada!", photoRemoved:"¡Foto eliminada!", saved:"¡Guardado!", adminAdded:"¡Admin registrado!", installerAdded:"¡Instalador agregado!", contactSaved:"¡Contacto guardado!", contactDeleted:"¡Contacto eliminado!", errLoad:"Error al cargar", errSave:"Error al guardar", errPhoto:"Error en foto", errDup:"El nombre ya existe.", fillAll:"Complete todos los campos.", fillReq:"Complete campos requeridos.", removePhoto:"¿Eliminar foto?",
+    ctClients:"👤 Clientes", ctBuilders:"🏗️ Constructores", ctContracts:"📄 Contratos", ctContractors:"🔧 Contratistas", newContact:"+ Nuevo", name:"Nombre *", phone:"Teléfono", email:"Email", addr:"Dirección", notes:"Notas", contactCo:"Empresa *", contactPerson:"Contacto", svcType:"Servicio", contractTitle:"Título *", relatedTo:"Relacionado con", uploadFile:"📎 Adjuntar", noContacts:"Sin registros.", viewFile:"📄 Ver archivo", noFile:"Sin archivo",
+    companiesTitle:"🏢 Empresas", noCompanies:"Sin empresas.", activeJobs:"activos", totalJobs:"total", installers:"instaladores",
+    companyJobs:"Trabajos", companyInstallers:"Instaladores", companyClients:"Contactos",
+    reportTitle:"📊 Reporte", periodFrom:"De", periodTo:"Hasta", generateReport:"Generar Reporte", generating:"Generando...", reportSummary:"Resumen del Período", totalJobs2:"Total Trabajos", completedJobs:"Completados", totalSF:"Total SF", estimatedRevenue:"Ingresos Estimados", jobsList:"Lista de Trabajos", printReport:"🖨️ Imprimir", noReportData:"Sin trabajos en el período.", extrasTitle:"Ítems Adicionales", addExtra:"+ Agregar Ítem", extraItem:"Ítem", extraQty:"Cant.", extraTotal:"Total",
+    pricingTitle:"💰 Tabla de Precios", baseSF:"Precio Base por SF ($)", savePricing:"Guardar Precios", pricingSaved:"¡Precios guardados!",
     months:["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
     days:["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],
   },
@@ -74,8 +61,8 @@ const T = {
 
 function todayStr() { return new Date().toISOString().split("T")[0]; }
 function formatDate(d) { if(!d) return ""; const [y,m,day]=d.split("-"); return `${day}/${m}/${y}`; }
+function firstDayOfMonth() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`; }
 
-// ─── SMALL COMPONENTS ────────────────────────────────────────────────
 function SBadge({ status, t }) {
   const lm={scheduled:t.scheduled,in_progress:t.inProgress,completed:t.completed,cancelled:t.cancelled};
   const c=SC[status]||SC.scheduled, bg=SB[status]||SB.scheduled;
@@ -86,13 +73,12 @@ function PhoneBtn({ phone, label, color="#B8924A" }) {
   return <a href={`tel:${phone.replace(/\D/g,"")}`} style={{display:"inline-flex",alignItems:"center",gap:6,background:color+"18",color,border:`1px solid ${color}44`,borderRadius:20,padding:"5px 14px",fontSize:13,fontWeight:700,textDecoration:"none"}}>📞 {label}: {phone}</a>;
 }
 function ST({ children }) { return <div style={{fontSize:11,fontWeight:800,color:"#1A1A1A",marginBottom:10,textTransform:"uppercase",letterSpacing:0.8}}>{children}</div>; }
-function FF({ label, value, onChange, type="text", multiline, placeholder, flex }) {
+function FF({ label, value, onChange, type="text", multiline, placeholder }) {
   const base={width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,fontFamily:"inherit",boxSizing:"border-box",outline:"none",background:"#fff"};
-  return <div style={{marginBottom:12,flex}}><label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:4}}>{label}</label>{multiline?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={3} placeholder={placeholder} style={{...base,resize:"vertical"}}/>:<input type={type} value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={base}/>}</div>;
+  return <div style={{marginBottom:12}}><label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:4}}>{label}</label>{multiline?<textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={3} placeholder={placeholder} style={{...base,resize:"vertical"}}/>:<input type={type} value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={base}/>}</div>;
 }
 function LangSwitcher({ lang, setLang }) {
-  const [open,setOpen]=useState(false);
-  const flags={pt:"🇧🇷",en:"🇺🇸",es:"🇪🇸"};
+  const [open,setOpen]=useState(false); const flags={pt:"🇧🇷",en:"🇺🇸",es:"🇪🇸"};
   return <div style={{position:"relative"}}><button onClick={()=>setOpen(o=>!o)} style={{background:"#2A2A2A",border:"1px solid #444",borderRadius:20,padding:"3px 10px",fontSize:14,cursor:"pointer"}}>{flags[lang]}</button>{open&&<div style={{position:"absolute",right:0,top:34,background:"#2A2A2A",border:"1px solid #444",borderRadius:10,padding:6,zIndex:200,display:"flex",flexDirection:"column",gap:4}}>{Object.entries(flags).map(([l,f])=><button key={l} onClick={()=>{setLang(l);localStorage.setItem("cl_lang",l);setOpen(false);}} style={{background:lang===l?"#B8924A22":"none",border:"none",borderRadius:6,padding:"5px 8px",fontSize:16,cursor:"pointer"}}>{f}</button>)}</div>}</div>;
 }
 function PhotoGrid({ photos, onDelete, canDelete }) {
@@ -103,11 +89,207 @@ function PhotoUploadBtn({ onAdd, uploading }) {
   return <><button onClick={()=>ref.current.click()} disabled={uploading} style={{width:88,height:68,border:"2px dashed #B8924A",borderRadius:8,background:"#FFFBF5",color:"#B8924A",fontSize:uploading?14:22,cursor:uploading?"not-allowed":"pointer",marginTop:6,display:"flex",alignItems:"center",justifyContent:"center"}}>{uploading?"...":"+"}</button><input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>Array.from(e.target.files).forEach(f=>onAdd(f))}/></>;
 }
 
+// ─── REPORTS TAB ─────────────────────────────────────────────────────
+function ReportsTab({ session, t, showToast }) {
+  const [from,setFrom]=useState(firstDayOfMonth());
+  const [to,setTo]=useState(todayStr());
+  const [report,setReport]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [pricing,setPricing]=useState(null);
+  const isAdmin=session.role==="admin"||session.role==="owner";
+  const company=session.role==="owner"?null:session.company;
+
+  useEffect(()=>{
+    if(isAdmin&&company){
+      supabase.from("pricing_config").select("*").eq("company",company).single().then(({data})=>{
+        if(data) setPricing(data);
+        else setPricing({company,base_sf:45,items:DEFAULT_PRICING_ITEMS});
+      });
+    }
+  },[]);
+
+  const generate=async()=>{
+    setLoading(true);
+    let q=supabase.from("jobs").select("*").gte("date",from).lte("date",to).order("date",{ascending:true});
+    if(session.role==="admin") q=q.eq("company",company);
+    if(session.role==="installer") q=q.eq("assigned_to",session.name);
+    const {data:jobs}=await q;
+    setReport(jobs||[]);
+    setLoading(false);
+  };
+
+  const calcJobRevenue=(job)=>{
+    if(!pricing) return 0;
+    const baseSF=(job.square_footage||0)*(pricing.base_sf||45);
+    const extrasTotal=(job.extras||[]).reduce((sum,ex)=>{
+      const item=pricing.items.find(i=>i.id===ex.item_id);
+      if(!item) return sum;
+      if(item.type==="per_sf") return sum+(job.square_footage||0)*item.price*(ex.qty||1);
+      if(item.type==="per_unit"||item.type==="flat"||item.type==="per_mile") return sum+item.price*(ex.qty||1);
+      return sum;
+    },0);
+    return baseSF+extrasTotal;
+  };
+
+  const totalSF=report?report.reduce((s,j)=>s+(j.square_footage||0),0):0;
+  const totalRevenue=report?report.reduce((s,j)=>s+calcJobRevenue(j),0):0;
+  const completed=report?report.filter(j=>j.status==="completed").length:0;
+  const sl={scheduled:t.scheduled,in_progress:t.inProgress,completed:t.completed,cancelled:t.cancelled};
+
+  const printReport=()=>{ window.print(); };
+
+  return (
+    <div>
+      <div style={{fontSize:20,fontWeight:800,color:"#1A1A1A",marginBottom:16}}>{t.reportTitle}</div>
+
+      {/* Period selector */}
+      <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:16,marginBottom:14}}>
+        <div style={{display:"flex",gap:12,alignItems:"flex-end",flexWrap:"wrap"}}>
+          <div style={{flex:1,minWidth:130}}>
+            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:4}}>{t.periodFrom}</label>
+            <input type="date" value={from} onChange={e=>setFrom(e.target.value)} style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+          </div>
+          <div style={{flex:1,minWidth:130}}>
+            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:4}}>{t.periodTo}</label>
+            <input type="date" value={to} onChange={e=>setTo(e.target.value)} style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+          </div>
+          <button onClick={generate} disabled={loading} style={{background:"#B8924A",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontWeight:800,fontSize:14,cursor:"pointer",opacity:loading?0.7:1,whiteSpace:"nowrap"}}>
+            {loading?t.generating:t.generateReport}
+          </button>
+        </div>
+      </div>
+
+      {report&&(
+        <>
+          {report.length===0
+            ? <div style={{textAlign:"center",padding:"40px",color:"#bbb"}}><div style={{fontSize:40,marginBottom:10}}>📊</div><div>{t.noReportData}</div></div>
+            : <>
+                {/* Summary cards */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:14}}>
+                  <div style={{background:"#1A1A1A",borderRadius:12,padding:16,textAlign:"center"}}>
+                    <div style={{fontSize:28,fontWeight:900,color:"#B8924A"}}>{report.length}</div>
+                    <div style={{fontSize:11,color:"#888",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginTop:4}}>{t.totalJobs2}</div>
+                  </div>
+                  <div style={{background:"#F0FDF4",borderRadius:12,padding:16,textAlign:"center"}}>
+                    <div style={{fontSize:28,fontWeight:900,color:"#16A34A"}}>{completed}</div>
+                    <div style={{fontSize:11,color:"#16A34A",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginTop:4}}>{t.completedJobs}</div>
+                  </div>
+                  <div style={{background:"#FDF6EC",borderRadius:12,padding:16,textAlign:"center"}}>
+                    <div style={{fontSize:28,fontWeight:900,color:"#B8924A"}}>{totalSF.toFixed(1)}</div>
+                    <div style={{fontSize:11,color:"#B8924A",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginTop:4}}>{t.totalSF}</div>
+                  </div>
+                  {isAdmin&&(
+                    <div style={{background:"#EFF6FF",borderRadius:12,padding:16,textAlign:"center"}}>
+                      <div style={{fontSize:24,fontWeight:900,color:"#2563EB"}}>${totalRevenue.toFixed(0)}</div>
+                      <div style={{fontSize:11,color:"#2563EB",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginTop:4}}>{t.estimatedRevenue}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Jobs list */}
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",padding:16,marginBottom:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                    <ST>{t.jobsList}</ST>
+                    <button onClick={printReport} style={{background:"#F3F4F6",color:"#374151",border:"1px solid #E5E7EB",borderRadius:8,padding:"5px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>{t.printReport}</button>
+                  </div>
+                  {report.map(job=>(
+                    <div key={job.id} style={{borderBottom:"1px solid #F3F4F6",paddingBottom:12,marginBottom:12}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                        <div style={{flex:1}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+                            <span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span>
+                            <SBadge status={job.status} t={t}/>
+                            {job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}
+                          </div>
+                          <div style={{fontSize:14,fontWeight:700,color:"#1A1A1A"}}>{job.client}</div>
+                          {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600}}>💰 {job.builder}</div>}
+                          <div style={{fontSize:12,color:"#888"}}>📅 {formatDate(job.date)} · 👷 {job.assigned_to||"—"}</div>
+                        </div>
+                        {isAdmin&&(
+                          <div style={{textAlign:"right",flexShrink:0}}>
+                            <div style={{fontSize:16,fontWeight:900,color:"#16A34A"}}>${calcJobRevenue(job).toFixed(0)}</div>
+                            <div style={{fontSize:10,color:"#888"}}>{job.square_footage||0} SF × ${pricing?.base_sf||45}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {isAdmin&&(
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:8,borderTop:"2px solid #1A1A1A"}}>
+                      <div style={{fontSize:14,fontWeight:800}}>TOTAL</div>
+                      <div style={{fontSize:20,fontWeight:900,color:"#16A34A"}}>${totalRevenue.toFixed(2)}</div>
+                    </div>
+                  )}
+                </div>
+              </>
+          }
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── PRICING CONFIG ───────────────────────────────────────────────────
+function PricingConfig({ company, t, showToast, onClose }) {
+  const [config,setConfig]=useState({company,base_sf:45,items:DEFAULT_PRICING_ITEMS});
+  const [saving,setSaving]=useState(false);
+
+  useEffect(()=>{
+    supabase.from("pricing_config").select("*").eq("company",company).single().then(({data})=>{
+      if(data) setConfig(data);
+    });
+  },[]);
+
+  const save=async()=>{
+    setSaving(true);
+    const {data:existing}=await supabase.from("pricing_config").select("id").eq("company",company).single();
+    let error;
+    if(existing){ ({error}=await supabase.from("pricing_config").update({base_sf:config.base_sf,items:config.items,updated_at:new Date().toISOString()}).eq("company",company)); }
+    else { ({error}=await supabase.from("pricing_config").insert([{...config}])); }
+    setSaving(false);
+    if(error){showToast(t.errSave,"error");return;}
+    showToast(t.pricingSaved); onClose();
+  };
+
+  const updateItem=(id,field,val)=>{
+    setConfig(c=>({...c,items:c.items.map(i=>i.id===id?{...i,[field]:field==="price"?Number(val):val}:i)}));
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"#00000077",display:"flex",alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
+      <div style={{background:"#fff",borderRadius:16,padding:22,width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+          <div style={{fontSize:16,fontWeight:800}}>{t.pricingTitle}</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#666"}}>×</button>
+        </div>
+        <div style={{marginBottom:16}}>
+          <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:4}}>{t.baseSF}</label>
+          <input type="number" value={config.base_sf} onChange={e=>setConfig(c=>({...c,base_sf:Number(e.target.value)}))} style={{width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"9px 12px",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+        </div>
+        <div style={{fontSize:12,fontWeight:800,color:"#666",marginBottom:10,textTransform:"uppercase",letterSpacing:0.5}}>Itens Adicionais</div>
+        {config.items.map(item=>(
+          <div key={item.id} style={{display:"flex",gap:8,alignItems:"center",marginBottom:8,padding:"8px 12px",background:"#F9F7F4",borderRadius:8}}>
+            <div style={{flex:1,fontSize:13,fontWeight:600,color:"#1A1A1A"}}>{item.name}</div>
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <span style={{fontSize:12,color:"#888"}}>$</span>
+              <input type="number" value={item.price} onChange={e=>updateItem(item.id,"price",e.target.value)} style={{width:70,border:"1px solid #E5E7EB",borderRadius:6,padding:"5px 8px",fontSize:13,textAlign:"right",outline:"none"}}/>
+              <span style={{fontSize:11,color:"#888",minWidth:50}}>{item.type==="per_sf"?"/SF":item.type==="per_unit"?"/unit":item.type==="per_mile"?"/mi":"flat"}</span>
+            </div>
+          </div>
+        ))}
+        <div style={{display:"flex",gap:10,marginTop:16}}>
+          <button onClick={save} disabled={saving} style={{flex:1,background:"#B8924A",color:"#fff",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:14,cursor:"pointer",opacity:saving?0.7:1}}>{saving?t.saving:t.savePricing}</button>
+          <button onClick={onClose} style={{background:"#F3F4F6",color:"#374151",border:"none",borderRadius:10,padding:"12px 16px",cursor:"pointer",fontSize:14}}>{t.cancel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── LOGIN ────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin, lang, setLang }) {
   const t=T[lang];
-  const [mode,setMode]=useState(null);
-  const [pw,setPw]=useState(""); const [name,setName]=useState(""); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
+  const [mode,setMode]=useState(null); const [pw,setPw]=useState(""); const [name,setName]=useState(""); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
   const [admins,setAdmins]=useState([]); const [installers,setInstallers]=useState([]);
   useEffect(()=>{
     supabase.from("admins").select("name").order("name").then(({data})=>{ if(data) setAdmins(data.map(a=>a.name)); });
@@ -158,11 +340,16 @@ function LoginScreen({ onLogin, lang, setLang }) {
 
 // ─── JOB FORM ────────────────────────────────────────────────────────
 function JobForm({ onSave, onCancel, saving, installerNames, initial, t, forceCompany }) {
-  const blank={work_order:"",client:"",client_phone:"",address:"",access_notes:"",date:"",time:"08:00",service:SERVICES[0],status:"scheduled",assigned_to:"",installer_phone:"",estimated_hours:4,scope:"",square_footage:"",builder:""};
-  const [form,setForm]=useState(initial?{...blank,...initial}:blank);
+  const blank={work_order:"",client:"",client_phone:"",address:"",access_notes:"",date:"",time:"08:00",service:SERVICES[0],status:"scheduled",assigned_to:"",installer_phone:"",estimated_hours:4,scope:"",square_footage:"",builder:"",extras:[]};
+  const [form,setForm]=useState(initial?{...blank,...initial,extras:initial.extras||[]}:blank);
   const set=k=>v=>setForm(f=>({...f,[k]:v}));
   const sl={scheduled:t.scheduled,in_progress:t.inProgress,completed:t.completed,cancelled:t.cancelled};
-  const save=()=>{ if(!form.work_order||!form.client||!form.address||!form.date){alert(t.fillReq);return;} onSave({...form,square_footage:form.square_footage?Number(form.square_footage):null}); };
+  const save=()=>{
+    if(!form.work_order||!form.client||!form.address||!form.date){alert(t.fillReq);return;}
+    // Only send fields that belong to jobs table — exclude company to avoid update error
+    const {company:_c,...rest}=form;
+    onSave({...rest,square_footage:rest.square_footage?Number(rest.square_footage):null});
+  };
   return (
     <div style={{position:"fixed",inset:0,background:"#00000077",display:"flex",alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
       <div style={{background:"#fff",borderRadius:16,padding:22,width:"100%",maxWidth:560,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
@@ -195,12 +382,10 @@ function JobForm({ onSave, onCancel, saving, installerNames, initial, t, forceCo
   );
 }
 
-// ─── CONTACT FORM ─────────────────────────────────────────────────────
+// ─── CONTACTS TAB ────────────────────────────────────────────────────
 function ContactsTab({ session, t, showToast, forceCompany }) {
-  const [sub,setSub]=useState("clients");
-  const [records,setRecords]=useState([]); const [loading,setLoading]=useState(false);
-  const [showForm,setShowForm]=useState(false); const [editing,setEditing]=useState(null);
-  const [saving,setSaving]=useState(false); const [search,setSearch]=useState("");
+  const [sub,setSub]=useState("clients"); const [records,setRecords]=useState([]); const [loading,setLoading]=useState(false);
+  const [showForm,setShowForm]=useState(false); const [editing,setEditing]=useState(null); const [saving,setSaving]=useState(false); const [search,setSearch]=useState("");
   const company=forceCompany||(session.role==="owner"?null:session.company);
   const tableMap={clients:"contacts_clients",builders:"contacts_builders",contractors:"contacts_contractors",contracts:"contracts"};
   const table=tableMap[sub];
@@ -208,33 +393,21 @@ function ContactsTab({ session, t, showToast, forceCompany }) {
   useEffect(()=>{ load();setSearch(""); },[sub,forceCompany]);
   const filtered=records.filter(r=>{ const s=search.toLowerCase(); return !s||Object.values(r).some(v=>String(v||"").toLowerCase().includes(s)); });
   const emptyForm=()=>{ if(sub==="clients") return {name:"",phone:"",email:"",address:"",notes:""}; if(sub==="builders") return {name:"",contact:"",phone:"",email:"",notes:""}; if(sub==="contractors") return {name:"",service:"",phone:"",email:"",notes:""}; return {title:"",related_to:"",notes:"",file_url:""}; };
-  const [form,setForm]=useState(emptyForm());
-  const fileRef=useRef(); const [uploadFile,setUploadFile]=useState(null);
+  const [form,setForm]=useState(emptyForm()); const fileRef=useRef(); const [uploadFile,setUploadFile]=useState(null);
   useEffect(()=>{ setForm(editing?{...emptyForm(),...editing}:emptyForm()); setUploadFile(null); },[editing,sub]);
   const save=async()=>{
     const req=sub==="contracts"?form.title:form.name; if(!req){alert(t.fillAll);return;}
-    setSaving(true);
-    const payload={...form,company:company||"Owner"};
-    if(sub==="contracts"&&uploadFile){
-      const path=`${company||"owner"}/${Date.now()}-${uploadFile.name}`;
-      const {error:upErr}=await supabase.storage.from("contracts").upload(path,uploadFile);
-      if(!upErr){ const {data:{publicUrl}}=supabase.storage.from("contracts").getPublicUrl(path); payload.file_url=publicUrl; }
-    }
-    let error;
-    if(editing){ ({error}=await supabase.from(table).update(payload).eq("id",editing.id)); }
-    else { ({error}=await supabase.from(table).insert([payload])); }
-    setSaving(false);
-    if(error){showToast(t.errSave,"error");return;}
-    showToast(t.contactSaved); setShowForm(false); setEditing(null); load();
+    setSaving(true); const payload={...form,company:company||"Owner"};
+    if(sub==="contracts"&&uploadFile){ const path=`${company||"owner"}/${Date.now()}-${uploadFile.name}`; const {error:upErr}=await supabase.storage.from("contracts").upload(path,uploadFile); if(!upErr){ const {data:{publicUrl}}=supabase.storage.from("contracts").getPublicUrl(path); payload.file_url=publicUrl; } }
+    let error; if(editing){ ({error}=await supabase.from(table).update(payload).eq("id",editing.id)); } else { ({error}=await supabase.from(table).insert([payload])); }
+    setSaving(false); if(error){showToast(t.errSave,"error");return;} showToast(t.contactSaved); setShowForm(false); setEditing(null); load();
   };
   const remove=async(id)=>{ if(!confirm(sub==="contracts"?t.confirmDelContract:t.confirmDelContact)) return; await supabase.from(table).delete().eq("id",id); showToast(t.contactDeleted); load(); };
   const subTabs=[{id:"clients",label:t.ctClients},{id:"builders",label:t.ctBuilders},{id:"contracts",label:t.ctContracts},{id:"contractors",label:t.ctContractors}];
   return (
     <div>
-      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
-        {subTabs.map(st=><button key={st.id} onClick={()=>setSub(st.id)} style={{background:sub===st.id?"#1A1A1A":"#fff",color:sub===st.id?"#B8924A":"#666",border:`1px solid ${sub===st.id?"#1A1A1A":"#E5E7EB"}`,borderRadius:20,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer"}}>{st.label}</button>)}
-      </div>
-      <div style={{display:"flex",gap:10,marginBottom:14,alignItems:"center"}}>
+      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>{subTabs.map(st=><button key={st.id} onClick={()=>setSub(st.id)} style={{background:sub===st.id?"#1A1A1A":"#fff",color:sub===st.id?"#B8924A":"#666",border:`1px solid ${sub===st.id?"#1A1A1A":"#E5E7EB"}`,borderRadius:20,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer"}}>{st.label}</button>)}</div>
+      <div style={{display:"flex",gap:10,marginBottom:12,alignItems:"center"}}>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search..." style={{flex:1,border:"1px solid #E5E7EB",borderRadius:20,padding:"7px 14px",fontSize:13,outline:"none",background:"#fff"}}/>
         <button onClick={()=>{setEditing(null);setForm(emptyForm());setShowForm(true);}} style={{background:"#B8924A",color:"#fff",border:"none",borderRadius:20,padding:"7px 14px",fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>{t.newContact}</button>
       </div>
@@ -244,22 +417,8 @@ function ContactsTab({ session, t, showToast, forceCompany }) {
           <div key={r.id} style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",padding:14,marginBottom:10,boxShadow:"0 2px 6px rgba(0,0,0,0.04)"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
               <div style={{flex:1,minWidth:0}}>
-                {sub==="contracts"?<>
-                  <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:4}}>{r.title}</div>
-                  {r.related_to&&<div style={{fontSize:13,color:"#666",marginBottom:4}}>🔗 {r.related_to}</div>}
-                  {r.notes&&<div style={{fontSize:12,color:"#888",marginBottom:6}}>{r.notes}</div>}
-                  {!forceCompany&&session.role==="owner"&&r.company&&<div style={{fontSize:11,color:"#555",background:"#F3F4F6",borderRadius:8,padding:"2px 8px",display:"inline-block",marginBottom:6}}>🏢 {r.company}</div>}
-                  {r.file_url?<a href={r.file_url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,background:"#B8924A18",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,textDecoration:"none"}}>{t.viewFile}</a>:<span style={{fontSize:12,color:"#aaa"}}>{t.noFile}</span>}
-                </>:<>
-                  <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{r.name}</div>
-                  {r.contact&&<div style={{fontSize:13,color:"#666",marginBottom:2}}>👤 {r.contact}</div>}
-                  {r.service&&<div style={{fontSize:13,color:"#B8924A",fontWeight:600,marginBottom:2}}>🔧 {r.service}</div>}
-                  {r.phone&&<div style={{fontSize:13,marginBottom:2}}><a href={`tel:${r.phone.replace(/\D/g,"")}`} style={{color:"#2563EB",textDecoration:"none"}}>📞 {r.phone}</a></div>}
-                  {r.email&&<div style={{fontSize:13,color:"#666",marginBottom:2}}>✉️ {r.email}</div>}
-                  {r.address&&<div style={{fontSize:13,color:"#666",marginBottom:2}}>📍 {r.address}</div>}
-                  {r.notes&&<div style={{fontSize:12,color:"#888",marginTop:4,fontStyle:"italic"}}>{r.notes}</div>}
-                  {!forceCompany&&session.role==="owner"&&r.company&&<div style={{fontSize:11,color:"#555",background:"#F3F4F6",borderRadius:8,padding:"2px 8px",display:"inline-block",marginTop:6}}>🏢 {r.company}</div>}
-                </>}
+                {sub==="contracts"?<><div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:4}}>{r.title}</div>{r.related_to&&<div style={{fontSize:13,color:"#666",marginBottom:4}}>🔗 {r.related_to}</div>}{r.notes&&<div style={{fontSize:12,color:"#888",marginBottom:6}}>{r.notes}</div>}{!forceCompany&&session.role==="owner"&&r.company&&<div style={{fontSize:11,color:"#555",background:"#F3F4F6",borderRadius:8,padding:"2px 8px",display:"inline-block",marginBottom:6}}>🏢 {r.company}</div>}{r.file_url?<a href={r.file_url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,background:"#B8924A18",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,textDecoration:"none"}}>{t.viewFile}</a>:<span style={{fontSize:12,color:"#aaa"}}>{t.noFile}</span>}</>
+                :<><div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{r.name}</div>{r.contact&&<div style={{fontSize:13,color:"#666",marginBottom:2}}>👤 {r.contact}</div>}{r.service&&<div style={{fontSize:13,color:"#B8924A",fontWeight:600,marginBottom:2}}>🔧 {r.service}</div>}{r.phone&&<div style={{fontSize:13,marginBottom:2}}><a href={`tel:${r.phone.replace(/\D/g,"")}`} style={{color:"#2563EB",textDecoration:"none"}}>📞 {r.phone}</a></div>}{r.email&&<div style={{fontSize:13,color:"#666",marginBottom:2}}>✉️ {r.email}</div>}{r.address&&<div style={{fontSize:13,color:"#666",marginBottom:2}}>📍 {r.address}</div>}{r.notes&&<div style={{fontSize:12,color:"#888",marginTop:4,fontStyle:"italic"}}>{r.notes}</div>}{!forceCompany&&session.role==="owner"&&r.company&&<div style={{fontSize:11,color:"#555",background:"#F3F4F6",borderRadius:8,padding:"2px 8px",display:"inline-block",marginTop:6}}>🏢 {r.company}</div>}</>}
               </div>
               <div style={{display:"flex",gap:6,flexShrink:0}}>
                 <button onClick={()=>{setEditing(r);setShowForm(true);}} style={{background:"#F9F7F4",color:"#B8924A",border:"1px solid #B8924A33",borderRadius:8,padding:"5px 9px",fontSize:12,cursor:"pointer",fontWeight:700}}>✏️</button>
@@ -276,8 +435,11 @@ function ContactsTab({ session, t, showToast, forceCompany }) {
             {sub==="clients"&&<><FF label={t.name} value={form.name} onChange={v=>setForm(f=>({...f,name:v}))} placeholder="John Smith"/><div style={{display:"flex",gap:10}}><div style={{flex:1}}><FF label={t.phone} value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))} type="tel"/></div><div style={{flex:1}}><FF label={t.email} value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/></div></div><FF label={t.addr} value={form.address} onChange={v=>setForm(f=>({...f,address:v}))}/><FF label={t.notes} value={form.notes} onChange={v=>setForm(f=>({...f,notes:v}))} multiline/></>}
             {sub==="builders"&&<><FF label={t.contactCo} value={form.name} onChange={v=>setForm(f=>({...f,name:v}))} placeholder="Brown Haven Homes"/><div style={{display:"flex",gap:10}}><div style={{flex:1}}><FF label={t.contactPerson} value={form.contact} onChange={v=>setForm(f=>({...f,contact:v}))}/></div><div style={{flex:1}}><FF label={t.phone} value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))} type="tel"/></div></div><FF label={t.email} value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/><FF label={t.notes} value={form.notes} onChange={v=>setForm(f=>({...f,notes:v}))} multiline/></>}
             {sub==="contractors"&&<><FF label={t.name} value={form.name} onChange={v=>setForm(f=>({...f,name:v}))} placeholder="Alberth"/><div style={{display:"flex",gap:10}}><div style={{flex:1}}><FF label={t.svcType} value={form.service} onChange={v=>setForm(f=>({...f,service:v}))}/></div><div style={{flex:1}}><FF label={t.phone} value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))} type="tel"/></div></div><FF label={t.email} value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/><FF label={t.notes} value={form.notes} onChange={v=>setForm(f=>({...f,notes:v}))} multiline/></>}
-            {sub==="contracts"&&<><FF label={t.contractTitle} value={form.title} onChange={v=>setForm(f=>({...f,title:v}))} placeholder="Contract #001"/><FF label={t.relatedTo} value={form.related_to} onChange={v=>setForm(f=>({...f,related_to:v}))}/><FF label={t.notes} value={form.notes} onChange={v=>setForm(f=>({...f,notes:v}))} multiline/><div style={{marginBottom:12}}><label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:6}}>{t.uploadFile}</label>{form.file_url&&<a href={form.file_url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,background:"#B8924A18",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,textDecoration:"none",marginBottom:8}}>{t.viewFile}</a>}<div style={{display:"flex",gap:10,alignItems:"center"}}><button onClick={()=>fileRef.current.click()} style={{background:"#F9F7F4",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:8,padding:"7px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>📎 {uploadFile?uploadFile.name:t.uploadFile}</button></div><input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.png,.jpg" style={{display:"none"}} onChange={e=>setUploadFile(e.target.files[0])}/></div></>}
-            <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={save} disabled={saving} style={{flex:1,background:"#B8924A",color:"#fff",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:14,cursor:"pointer",opacity:saving?0.7:1}}>{saving?t.saving:t.saveChanges}</button><button onClick={()=>{setShowForm(false);setEditing(null);}} style={{background:"#F3F4F6",color:"#374151",border:"none",borderRadius:10,padding:"12px 16px",cursor:"pointer",fontSize:14}}>{t.cancel}</button></div>
+            {sub==="contracts"&&<><FF label={t.contractTitle} value={form.title} onChange={v=>setForm(f=>({...f,title:v}))} placeholder="Contract #001"/><FF label={t.relatedTo} value={form.related_to} onChange={v=>setForm(f=>({...f,related_to:v}))}/><FF label={t.notes} value={form.notes} onChange={v=>setForm(f=>({...f,notes:v}))} multiline/><div style={{marginBottom:12}}><label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:6}}>{t.uploadFile}</label>{form.file_url&&<a href={form.file_url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,background:"#B8924A18",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,textDecoration:"none",marginBottom:8}}>{t.viewFile}</a>}<button onClick={()=>fileRef.current.click()} style={{background:"#F9F7F4",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:8,padding:"7px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>📎 {uploadFile?uploadFile.name:t.uploadFile}</button><input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.png,.jpg" style={{display:"none"}} onChange={e=>setUploadFile(e.target.files[0])}/></div></>}
+            <div style={{display:"flex",gap:10,marginTop:8}}>
+              <button onClick={save} disabled={saving} style={{flex:1,background:"#B8924A",color:"#fff",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:14,cursor:"pointer",opacity:saving?0.7:1}}>{saving?t.saving:t.saveChanges}</button>
+              <button onClick={()=>{setShowForm(false);setEditing(null);}} style={{background:"#F3F4F6",color:"#374151",border:"none",borderRadius:10,padding:"12px 16px",cursor:"pointer",fontSize:14}}>{t.cancel}</button>
+            </div>
           </div>
         </div>
       )}
@@ -287,60 +449,46 @@ function ContactsTab({ session, t, showToast, forceCompany }) {
 
 // ─── COMPANIES TAB ────────────────────────────────────────────────────
 function CompaniesTab({ t, showToast, allJobs, allInstallers }) {
-  const [admins,setAdmins]=useState([]);
-  const [selected,setSelected]=useState(null); // {admin, company}
-  const [companyTab,setCompanyTab]=useState("jobs");
-  const [companyInstallers,setCompanyInstallers]=useState([]);
-  const [companyJobs,setCompanyJobs]=useState([]);
-  const [showJobForm,setShowJobForm]=useState(false);
-  const [editingJob,setEditingJob]=useState(null);
-  const [saving,setSaving]=useState(false);
-  const [installerNames,setInstallerNames]=useState([]);
-
+  const [admins,setAdmins]=useState([]); const [selected,setSelected]=useState(null); const [companyTab,setCompanyTab]=useState("jobs");
+  const [companyInstallers,setCompanyInstallers]=useState([]); const [companyJobs,setCompanyJobs]=useState([]);
+  const [showJobForm,setShowJobForm]=useState(false); const [editingJob,setEditingJob]=useState(null); const [saving,setSaving]=useState(false);
+  const [installerNames,setInstallerNames]=useState([]); const [showPricing,setShowPricing]=useState(false);
   const loadAdmins=async()=>{ const {data}=await supabase.from("admins").select("*").order("company"); if(data) setAdmins(data); };
   useEffect(()=>{ loadAdmins(); },[]);
-
   const openCompany=async(admin)=>{
     setSelected(admin); setCompanyTab("jobs");
     const {data:jobs}=await supabase.from("jobs").select("*").eq("company",admin.company).order("date",{ascending:true});
-    const {data:photos}=await supabase.from("job_photos").select("*");
-    const ph=photos||[];
+    const {data:photos}=await supabase.from("job_photos").select("*"); const ph=photos||[];
     setCompanyJobs((jobs||[]).map(j=>({...j,photos:ph.filter(p=>p.job_id===j.id)})));
     const {data:inst}=await supabase.from("installers").select("*").eq("company",admin.company).order("name");
-    setCompanyInstallers(inst||[]);
-    setInstallerNames((inst||[]).map(i=>i.name));
+    setCompanyInstallers(inst||[]); setInstallerNames((inst||[]).map(i=>i.name));
   };
-
   const saveJob=async(form)=>{
     setSaving(true);
-    const payload={...form,company:selected.company,square_footage:form.square_footage?Number(form.square_footage):null};
-    if(editingJob){ await supabase.from("jobs").update(payload).eq("id",editingJob.id); setCompanyJobs(prev=>prev.map(j=>j.id===editingJob.id?{...j,...payload}:j)); showToast(t.jobUpdated); }
-    else { const {data}=await supabase.from("jobs").insert([payload]).select().single(); if(data) setCompanyJobs(prev=>[...prev,{...data,photos:[]}]); showToast(t.jobCreated); }
+    if(editingJob){
+      await supabase.from("jobs").update(form).eq("id",editingJob.id);
+      setCompanyJobs(prev=>prev.map(j=>j.id===editingJob.id?{...j,...form}:j)); showToast(t.jobUpdated);
+    } else {
+      const {data}=await supabase.from("jobs").insert([{...form,company:selected.company}]).select().single();
+      if(data) setCompanyJobs(prev=>[...prev,{...data,photos:[]}]); showToast(t.jobCreated);
+    }
     setSaving(false); setShowJobForm(false); setEditingJob(null);
   };
-
   const deleteJob=async(id)=>{ if(!confirm(t.confirmDelJob)) return; await supabase.from("jobs").delete().eq("id",id); setCompanyJobs(prev=>prev.filter(j=>j.id!==id)); showToast(t.jobDeleted); };
-
   const removeInstaller=async(id)=>{ if(!confirm(t.confirmDelInstaller)) return; await supabase.from("installers").delete().eq("id",id); setCompanyInstallers(prev=>prev.filter(i=>i.id!==id)); showToast(t.contactDeleted); };
-
   const removeAdmin=async(id)=>{ if(!confirm(t.confirmDelAdmin)) return; await supabase.from("admins").delete().eq("id",id); loadAdmins(); setSelected(null); showToast(t.contactDeleted); };
-
-  // Company stats
-  const getStats=(company)=>{
-    const cj=allJobs.filter(j=>j.company===company);
-    const active=cj.filter(j=>j.status==="scheduled"||j.status==="in_progress").length;
-    const ci=allInstallers.filter(i=>i.company===company).length;
-    return {active,total:cj.length,installers:ci};
-  };
+  const getStats=(company)=>{ const cj=allJobs.filter(j=>j.company===company); return {active:cj.filter(j=>j.status==="scheduled"||j.status==="in_progress").length,total:cj.length,installers:allInstallers.filter(i=>i.company===company).length}; };
 
   if(selected) return (
     <div>
       <button onClick={()=>setSelected(null)} style={{background:"none",border:"1px solid #E5E7EB",borderRadius:20,padding:"5px 14px",fontSize:12,cursor:"pointer",color:"#666",marginBottom:14}}>← {t.companiesTitle}</button>
-      {/* Company header */}
       <div style={{background:"#1A1A1A",borderRadius:14,padding:20,marginBottom:14,borderBottom:"3px solid #B8924A"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
           <div><div style={{fontSize:11,color:"#B8924A",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>⚙️ {selected.name}</div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>{selected.company}</div></div>
-          <button onClick={()=>removeAdmin(selected.id)} style={{background:"#DC262622",color:"#DC2626",border:"1px solid #DC262633",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>🗑️ Admin</button>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setShowPricing(true)} style={{background:"#B8924A22",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>💰 Preços</button>
+            <button onClick={()=>removeAdmin(selected.id)} style={{background:"#DC262622",color:"#DC2626",border:"1px solid #DC262633",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer",fontWeight:700}}>🗑️</button>
+          </div>
         </div>
         <div style={{display:"flex",gap:16,marginTop:14,flexWrap:"wrap"}}>
           <span style={{fontSize:13,color:"#bbb"}}>📋 {companyJobs.filter(j=>j.status==="scheduled"||j.status==="in_progress").length} {t.activeJobs}</span>
@@ -348,75 +496,55 @@ function CompaniesTab({ t, showToast, allJobs, allInstallers }) {
           <span style={{fontSize:13,color:"#bbb"}}>👷 {companyInstallers.length} {t.installers}</span>
         </div>
       </div>
-
-      {/* Sub tabs */}
       <div style={{display:"flex",gap:8,marginBottom:14}}>
         {[{id:"jobs",label:`📋 ${t.companyJobs}`},{id:"installers",label:`👷 ${t.companyInstallers}`},{id:"clients",label:`📇 ${t.contacts}`}].map(ct=>(
           <button key={ct.id} onClick={()=>setCompanyTab(ct.id)} style={{background:companyTab===ct.id?"#1A1A1A":"#fff",color:companyTab===ct.id?"#B8924A":"#666",border:`1px solid ${companyTab===ct.id?"#1A1A1A":"#E5E7EB"}`,borderRadius:20,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>{ct.label}</button>
         ))}
       </div>
-
-      {/* JOBS */}
-      {companyTab==="jobs"&&(
-        <>
-          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
-            <button onClick={()=>{setEditingJob(null);setShowJobForm(true);}} style={{background:"#B8924A",color:"#fff",border:"none",borderRadius:20,padding:"7px 16px",fontSize:12,fontWeight:800,cursor:"pointer"}}>{t.newJob}</button>
-          </div>
-          {companyJobs.length===0?<div style={{textAlign:"center",padding:"30px",color:"#bbb"}}><div style={{fontSize:36,marginBottom:8}}>📋</div><div>{t.noJobs}</div></div>
-            :<div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {companyJobs.map(job=>{
-                const color=SC[job.status]||SC.scheduled;
-                return (
-                  <div key={job.id} style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",borderLeft:`4px solid ${color}`,padding:16,boxShadow:"0 2px 6px rgba(0,0,0,0.04)"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span><SBadge status={job.status} t={t}/>{job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}</div>
-                        <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
-                        {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
-                        <div style={{fontSize:13,color:"#666",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
-                        <div style={{display:"flex",gap:12,flexWrap:"wrap"}}><span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span>{job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}</div>
-                      </div>
-                      <div style={{display:"flex",gap:6,flexShrink:0}}>
-                        <button onClick={()=>{setEditingJob(job);setShowJobForm(true);}} style={{background:"#F9F7F4",color:"#B8924A",border:"1px solid #B8924A33",borderRadius:8,padding:"5px 9px",fontSize:12,cursor:"pointer",fontWeight:700}}>✏️</button>
-                        <button onClick={()=>deleteJob(job.id)} style={{background:"#FEF2F2",color:"#DC2626",border:"1px solid #DC262633",borderRadius:8,padding:"5px 9px",fontSize:12,cursor:"pointer",fontWeight:700}}>🗑️</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          }
-        </>
-      )}
-
-      {/* INSTALLERS */}
-      {companyTab==="installers"&&(
-        <div>
-          {companyInstallers.length===0?<div style={{textAlign:"center",padding:"30px",color:"#bbb"}}><div style={{fontSize:36,marginBottom:8}}>👷</div><div>{t.noJobs}</div></div>
-            :<div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {companyInstallers.map(inst=>(
-                <div key={inst.id} style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",padding:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div><div style={{fontSize:15,fontWeight:800,color:"#1A1A1A"}}>{inst.name}</div><div style={{fontSize:12,color:"#888",marginTop:2}}>👷 {t.installer}</div></div>
-                  <button onClick={()=>removeInstaller(inst.id)} style={{background:"#FEF2F2",color:"#DC2626",border:"1px solid #DC262633",borderRadius:8,padding:"5px 10px",fontSize:12,cursor:"pointer",fontWeight:700}}>{t.remove}</button>
-                </div>
-              ))}
-            </div>
-          }
+      {companyTab==="jobs"&&(<>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+          <button onClick={()=>{setEditingJob(null);setShowJobForm(true);}} style={{background:"#B8924A",color:"#fff",border:"none",borderRadius:20,padding:"7px 16px",fontSize:12,fontWeight:800,cursor:"pointer"}}>{t.newJob}</button>
         </div>
+        {companyJobs.length===0?<div style={{textAlign:"center",padding:"30px",color:"#bbb"}}><div style={{fontSize:36,marginBottom:8}}>📋</div><div>{t.noJobs}</div></div>
+          :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {companyJobs.map(job=>(
+              <div key={job.id} style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",borderLeft:`4px solid ${SC[job.status]||SC.scheduled}`,padding:16,boxShadow:"0 2px 6px rgba(0,0,0,0.04)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span><SBadge status={job.status} t={t}/>{job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}</div>
+                    <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
+                    {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
+                    <div style={{fontSize:13,color:"#666",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
+                    <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:4}}><span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span>{job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}</div>
+                  </div>
+                  <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    <button onClick={()=>{setEditingJob(job);setShowJobForm(true);}} style={{background:"#F9F7F4",color:"#B8924A",border:"1px solid #B8924A33",borderRadius:8,padding:"5px 9px",fontSize:12,cursor:"pointer",fontWeight:700}}>✏️</button>
+                    <button onClick={()=>deleteJob(job.id)} style={{background:"#FEF2F2",color:"#DC2626",border:"1px solid #DC262633",borderRadius:8,padding:"5px 9px",fontSize:12,cursor:"pointer",fontWeight:700}}>🗑️</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        }
+      </>)}
+      {companyTab==="installers"&&(
+        <div>{companyInstallers.length===0?<div style={{textAlign:"center",padding:"30px",color:"#bbb"}}><div style={{fontSize:36,marginBottom:8}}>👷</div><div>{t.noJobs}</div></div>
+          :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {companyInstallers.map(inst=>(
+              <div key={inst.id} style={{background:"#fff",borderRadius:12,border:"1px solid #E5E7EB",padding:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div><div style={{fontSize:15,fontWeight:800}}>{inst.name}</div><div style={{fontSize:12,color:"#888",marginTop:2}}>👷 {t.installer}</div></div>
+                <button onClick={()=>removeInstaller(inst.id)} style={{background:"#FEF2F2",color:"#DC2626",border:"1px solid #DC262633",borderRadius:8,padding:"5px 10px",fontSize:12,cursor:"pointer",fontWeight:700}}>{t.remove}</button>
+              </div>
+            ))}
+          </div>
+        }</div>
       )}
-
-      {/* CONTACTS */}
-      {companyTab==="clients"&&(
-        <ContactsTab session={{role:"owner"}} t={t} showToast={showToast} forceCompany={selected.company}/>
-      )}
-
-      {showJobForm&&(
-        <JobForm onSave={saveJob} onCancel={()=>{setShowJobForm(false);setEditingJob(null);}} saving={saving} installerNames={installerNames} initial={editingJob} t={t} forceCompany={selected.company}/>
-      )}
+      {companyTab==="clients"&&<ContactsTab session={{role:"owner"}} t={t} showToast={showToast} forceCompany={selected.company}/>}
+      {showJobForm&&<JobForm onSave={saveJob} onCancel={()=>{setShowJobForm(false);setEditingJob(null);}} saving={saving} installerNames={installerNames} initial={editingJob} t={t} forceCompany={selected.company}/>}
+      {showPricing&&<PricingConfig company={selected.company} t={t} showToast={showToast} onClose={()=>setShowPricing(false)}/>}
     </div>
   );
 
-  // Companies list
   return (
     <div>
       <div style={{fontSize:20,fontWeight:800,color:"#1A1A1A",marginBottom:16}}>{t.companiesTitle}</div>
@@ -427,20 +555,11 @@ function CompaniesTab({ t, showToast, allJobs, allInstallers }) {
             return (
               <div key={admin.id} onClick={()=>openCompany(admin)} style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",borderLeft:"4px solid #B8924A",padding:18,cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",transition:"box-shadow 0.15s"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.04)"}>
                 <div style={{fontSize:18,fontWeight:900,color:"#1A1A1A",marginBottom:4}}>{admin.company}</div>
-                <div style={{fontSize:13,color:"#888",marginBottom:10}}>⚙️ Admin: {admin.name}</div>
-                <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-                  <div style={{background:"#FDF6EC",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
-                    <div style={{fontSize:20,fontWeight:900,color:"#B8924A"}}>{stats.active}</div>
-                    <div style={{fontSize:10,color:"#B8924A",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{t.activeJobs}</div>
-                  </div>
-                  <div style={{background:"#F3F4F6",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
-                    <div style={{fontSize:20,fontWeight:900,color:"#555"}}>{stats.total}</div>
-                    <div style={{fontSize:10,color:"#555",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{t.totalJobs}</div>
-                  </div>
-                  <div style={{background:"#EFF6FF",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
-                    <div style={{fontSize:20,fontWeight:900,color:"#2563EB"}}>{stats.installers}</div>
-                    <div style={{fontSize:10,color:"#2563EB",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{t.installers}</div>
-                  </div>
+                <div style={{fontSize:13,color:"#888",marginBottom:10}}>⚙️ {admin.name}</div>
+                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                  <div style={{background:"#FDF6EC",borderRadius:10,padding:"8px 14px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:"#B8924A"}}>{stats.active}</div><div style={{fontSize:10,color:"#B8924A",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{t.activeJobs}</div></div>
+                  <div style={{background:"#F3F4F6",borderRadius:10,padding:"8px 14px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:"#555"}}>{stats.total}</div><div style={{fontSize:10,color:"#555",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{t.totalJobs}</div></div>
+                  <div style={{background:"#EFF6FF",borderRadius:10,padding:"8px 14px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:"#2563EB"}}>{stats.installers}</div><div style={{fontSize:10,color:"#2563EB",fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>{t.installers}</div></div>
                 </div>
               </div>
             );
@@ -453,9 +572,7 @@ function CompaniesTab({ t, showToast, allJobs, allInstallers }) {
 
 // ─── CALENDAR ────────────────────────────────────────────────────────
 function CalendarView({ jobs, onSelectJob, t }) {
-  const today=new Date();
-  const [year,setYear]=useState(today.getFullYear()); const [month,setMonth]=useState(today.getMonth());
-  const [sel,setSel]=useState(todayStr());
+  const today=new Date(); const [year,setYear]=useState(today.getFullYear()); const [month,setMonth]=useState(today.getMonth()); const [sel,setSel]=useState(todayStr());
   const fd=new Date(year,month,1).getDay(), dim=new Date(year,month+1,0).getDate(), tf=todayStr();
   const jbd={}; jobs.forEach(j=>{ if(j.date){ if(!jbd[j.date]) jbd[j.date]=[]; jbd[j.date].push(j); }});
   const prev=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
@@ -535,21 +652,13 @@ function DetailView({ job, session, t, onUpdateStatus, onAddPhoto, onDeletePhoto
 export default function App() {
   const [lang,setLang]=useState(()=>localStorage.getItem("cl_lang")||"pt");
   const t=T[lang];
-  const [session,setSession]=useState(null);
-  const [tab,setTab]=useState("list");
-  const [view,setView]=useState("main");
-  const [jobs,setJobs]=useState([]);
-  const [allInstallers,setAllInstallers]=useState([]);
-  const [selectedId,setSelectedId]=useState(null);
-  const [showForm,setShowForm]=useState(false);
-  const [editingJob,setEditingJob]=useState(null);
-  const [showAdmins,setShowAdmins]=useState(false);
-  const [showInstallers,setShowInstallers]=useState(false);
-  const [toast,setToast]=useState(null);
-  const [filterStatus,setFilterStatus]=useState("all");
-  const [loading,setLoading]=useState(false);
-  const [saving,setSaving]=useState(false);
-  const [uploading,setUploading]=useState(false);
+  const [session,setSession]=useState(null); const [tab,setTab]=useState("list"); const [view,setView]=useState("main");
+  const [jobs,setJobs]=useState([]); const [allInstallers,setAllInstallers]=useState([]);
+  const [selectedId,setSelectedId]=useState(null); const [showForm,setShowForm]=useState(false); const [editingJob,setEditingJob]=useState(null);
+  const [showAdmins,setShowAdmins]=useState(false); const [showInstallers,setShowInstallers]=useState(false);
+  const [showPricingAdmin,setShowPricingAdmin]=useState(false);
+  const [toast,setToast]=useState(null); const [filterStatus,setFilterStatus]=useState("all");
+  const [loading,setLoading]=useState(false); const [saving,setSaving]=useState(false); const [uploading,setUploading]=useState(false);
   const [installerNames,setInstallerNames]=useState([]);
 
   const showToast=(msg,type="success")=>{ setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
@@ -568,16 +677,29 @@ export default function App() {
   const loadInstallerNames=async()=>{
     let q=supabase.from("installers").select("name,company").order("name");
     if(session?.role==="admin") q=q.eq("company",session.company);
-    const {data}=await q;
-    if(data){ setInstallerNames(data.map(i=>i.name)); setAllInstallers(data); }
+    const {data}=await q; if(data){ setInstallerNames(data.map(i=>i.name)); setAllInstallers(data); }
   };
   useEffect(()=>{ if(session){ loadJobs(); if(isAdmin) loadInstallerNames(); } },[session]);
 
   const selectedJob=jobs.find(j=>j.id===selectedId);
   const filteredJobs=jobs.filter(j=>filterStatus==="all"||j.status===filterStatus);
 
-  const saveJob=async(form)=>{ setSaving(true); const company=session.role==="admin"?session.company:"Owner"; const {data,error}=await supabase.from("jobs").insert([{...form,company}]).select().single(); if(error){showToast(t.errSave,"error");setSaving(false);return;} setJobs(prev=>[...prev,{...data,photos:[]}]); setShowForm(false);setSaving(false);showToast(t.jobCreated); };
-  const updateJob=async(form)=>{ setSaving(true); const {error}=await supabase.from("jobs").update(form).eq("id",editingJob.id); if(error){showToast(t.errSave,"error");setSaving(false);return;} setJobs(prev=>prev.map(j=>j.id===editingJob.id?{...j,...form}:j)); setEditingJob(null);setSaving(false);showToast(t.jobUpdated); };
+  const saveJob=async(form)=>{
+    setSaving(true);
+    const company=session.role==="admin"?session.company:"Owner";
+    const {data,error}=await supabase.from("jobs").insert([{...form,company}]).select().single();
+    if(error){showToast(t.errSave,"error");setSaving(false);return;}
+    setJobs(prev=>[...prev,{...data,photos:[]}]); setShowForm(false);setSaving(false);showToast(t.jobCreated);
+  };
+  const updateJob=async(form)=>{
+    setSaving(true);
+    // Remove company from update payload to avoid RLS issues
+    const {company:_c,id:_id,photos:_p,created_at:_ca,...updateFields}=form;
+    const {error}=await supabase.from("jobs").update(updateFields).eq("id",editingJob.id);
+    if(error){showToast(t.errSave+" "+error.message,"error");setSaving(false);return;}
+    setJobs(prev=>prev.map(j=>j.id===editingJob.id?{...j,...updateFields}:j));
+    setEditingJob(null);setSaving(false);showToast(t.jobUpdated);
+  };
   const deleteJob=async(id)=>{ if(!confirm(t.confirmDelJob)) return; await supabase.from("job_photos").delete().eq("job_id",id); await supabase.from("jobs").delete().eq("id",id); setJobs(prev=>prev.filter(j=>j.id!==id)); setView("main");showToast(t.jobDeleted); };
   const updateStatus=async(id,status)=>{ const {error}=await supabase.from("jobs").update({status}).eq("id",id); if(error){showToast(t.errSave,"error");return;} setJobs(prev=>prev.map(j=>j.id===id?{...j,status}:j)); showToast(t.statusUpdated); };
   const addPhoto=async(jobId,type,file)=>{ setUploading(true); const ext=file.name.split(".").pop(); const path=`${jobId}/${type}-${Date.now()}.${ext}`; const {error:upErr}=await supabase.storage.from("job-photos").upload(path,file); if(upErr){showToast(t.errPhoto,"error");setUploading(false);return;} const {data:{publicUrl}}=supabase.storage.from("job-photos").getPublicUrl(path); const {data:photo,error:dbErr}=await supabase.from("job_photos").insert([{job_id:jobId,type,url:publicUrl}]).select().single(); if(dbErr){showToast(t.errPhoto,"error");setUploading(false);return;} setJobs(prev=>prev.map(j=>j.id===jobId?{...j,photos:[...(j.photos||[]),photo]}:j)); setUploading(false);showToast(t.photoSent); };
@@ -590,7 +712,8 @@ export default function App() {
     {id:"list",icon:"📋",label:t.jobs},
     {id:"calendar",icon:"📅",label:t.calendar},
     ...(session?.role==="owner"?[{id:"companies",icon:"🏢",label:t.companies}]:[]),
-    ...(isAdmin?[{id:"contacts",icon:"📇",label:t.contacts}]:[]),
+    ...(isAdmin?[{id:"contacts",icon:"📇",label:t.contacts},{id:"reports",icon:"📊",label:t.reports}]:[]),
+    ...(session?.role==="installer"?[{id:"reports",icon:"📊",label:t.reports}]:[]),
   ];
 
   if(!session) return <LoginScreen onLogin={setSession} lang={lang} setLang={setLang}/>;
@@ -603,6 +726,7 @@ export default function App() {
           <LangSwitcher lang={lang} setLang={l=>{setLang(l);localStorage.setItem("cl_lang",l);}}/>
           {session.role==="owner"&&<button onClick={()=>setShowAdmins(true)} style={{background:"#2A2A2A",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"3px 9px",fontSize:11,cursor:"pointer",fontWeight:700}}>⚙️</button>}
           {isAdmin&&<button onClick={()=>setShowInstallers(true)} style={{background:"#2A2A2A",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"3px 9px",fontSize:11,cursor:"pointer",fontWeight:700}}>👷</button>}
+          {session.role==="admin"&&<button onClick={()=>setShowPricingAdmin(true)} style={{background:"#2A2A2A",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"3px 9px",fontSize:11,cursor:"pointer",fontWeight:700}}>💰</button>}
           <span style={{background:"#B8924A22",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700}}>{session.role==="owner"?"👑":session.role==="admin"?"⚙️":"🔨"} {session.name}</span>
           {view==="detail"&&<button onClick={()=>setView("main")} style={{background:"none",border:"1px solid #444",color:"#ccc",borderRadius:20,padding:"3px 9px",fontSize:11,cursor:"pointer"}}>{t.back}</button>}
           <button onClick={()=>setSession(null)} style={{background:"none",border:"none",color:"#555",fontSize:18,cursor:"pointer"}}>↩</button>
@@ -617,48 +741,47 @@ export default function App() {
         )}
         {view==="main"&&(
           <>
-            {tab==="list"&&(
-              <>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-                  <div><div style={{fontSize:20,fontWeight:800,color:"#1A1A1A"}}>{session.role==="installer"?`${t.myJobs} ${session.name}`:session.role==="admin"?session.company:t.allJobs}</div><div style={{fontSize:12,color:"#999"}}>{filteredJobs.length} {t.work}</div></div>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                    {Object.entries(fl).map(([k,label])=><button key={k} onClick={()=>setFilterStatus(k)} style={{background:filterStatus===k?"#1A1A1A":"#fff",color:filterStatus===k?"#B8924A":"#666",border:`1px solid ${filterStatus===k?"#1A1A1A":"#E5E7EB"}`,borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{label}</button>)}
-                    <button onClick={loadJobs} style={{background:"#F3F4F6",color:"#555",border:"1px solid #E5E7EB",borderRadius:20,padding:"4px 10px",fontSize:11,cursor:"pointer"}}>↻</button>
-                    {isAdmin&&<button onClick={()=>setShowForm(true)} style={{background:"#B8924A",color:"#fff",border:"none",borderRadius:20,padding:"6px 14px",fontSize:12,fontWeight:800,cursor:"pointer"}}>{t.newJob}</button>}
-                  </div>
+            {tab==="list"&&(<>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
+                <div><div style={{fontSize:20,fontWeight:800,color:"#1A1A1A"}}>{session.role==="installer"?`${t.myJobs} ${session.name}`:session.role==="admin"?session.company:t.allJobs}</div><div style={{fontSize:12,color:"#999"}}>{filteredJobs.length} {t.work}</div></div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                  {Object.entries(fl).map(([k,label])=><button key={k} onClick={()=>setFilterStatus(k)} style={{background:filterStatus===k?"#1A1A1A":"#fff",color:filterStatus===k?"#B8924A":"#666",border:`1px solid ${filterStatus===k?"#1A1A1A":"#E5E7EB"}`,borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{label}</button>)}
+                  <button onClick={loadJobs} style={{background:"#F3F4F6",color:"#555",border:"1px solid #E5E7EB",borderRadius:20,padding:"4px 10px",fontSize:11,cursor:"pointer"}}>↻</button>
+                  {isAdmin&&<button onClick={()=>setShowForm(true)} style={{background:"#B8924A",color:"#fff",border:"none",borderRadius:20,padding:"6px 14px",fontSize:12,fontWeight:800,cursor:"pointer"}}>{t.newJob}</button>}
                 </div>
-                {loading?<div style={{textAlign:"center",padding:"50px",color:"#aaa"}}><div style={{fontSize:30,marginBottom:8}}>⏳</div><div>{t.loading}</div></div>
-                  :filteredJobs.length===0?<div style={{textAlign:"center",padding:"50px",color:"#bbb"}}><div style={{fontSize:40,marginBottom:8}}>📋</div><div style={{fontSize:15,fontWeight:600}}>{t.noJobs}</div></div>
-                  :<div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    {filteredJobs.map(job=>{
-                      const color=SC[job.status]||SC.scheduled, cc=(job.photos||[]).filter(p=>p.type==="completion").length, ap=(job.photos||[]).find(p=>p.type==="admin");
-                      return (
-                        <div key={job.id} onClick={()=>openJob(job)} style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",borderLeft:`4px solid ${color}`,padding:16,cursor:"pointer",boxShadow:"0 2px 6px rgba(0,0,0,0.04)",transition:"box-shadow 0.15s"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 6px rgba(0,0,0,0.04)"}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span><SBadge status={job.status} t={t}/>{job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}</div>
-                              <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
-                              {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
-                              <div style={{fontSize:13,color:"#666",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
-                              <div style={{display:"flex",gap:12,flexWrap:"wrap"}}><span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span><span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>{job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}</div>
-                              <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}>
-                                {job.client_phone&&<span style={{fontSize:11,color:"#2563EB",background:"#EFF6FF",borderRadius:10,padding:"2px 8px",fontWeight:600}}>📞</span>}
-                                {cc>0&&<span style={{fontSize:11,color:"#16A34A",background:"#F0FDF4",borderRadius:10,padding:"2px 8px",fontWeight:600}}>✅ {cc}</span>}
-                                {session.role==="owner"&&job.company&&<span style={{fontSize:11,color:"#555",background:"#F3F4F6",borderRadius:10,padding:"2px 8px",fontWeight:600}}>🏢 {job.company}</span>}
-                              </div>
+              </div>
+              {loading?<div style={{textAlign:"center",padding:"50px",color:"#aaa"}}><div style={{fontSize:30,marginBottom:8}}>⏳</div><div>{t.loading}</div></div>
+                :filteredJobs.length===0?<div style={{textAlign:"center",padding:"50px",color:"#bbb"}}><div style={{fontSize:40,marginBottom:8}}>📋</div><div style={{fontSize:15,fontWeight:600}}>{t.noJobs}</div></div>
+                :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {filteredJobs.map(job=>{
+                    const color=SC[job.status]||SC.scheduled, cc=(job.photos||[]).filter(p=>p.type==="completion").length, ap=(job.photos||[]).find(p=>p.type==="admin");
+                    return (
+                      <div key={job.id} onClick={()=>openJob(job)} style={{background:"#fff",borderRadius:14,border:"1px solid #E5E7EB",borderLeft:`4px solid ${color}`,padding:16,cursor:"pointer",boxShadow:"0 2px 6px rgba(0,0,0,0.04)",transition:"box-shadow 0.15s"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 6px rgba(0,0,0,0.04)"}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span><SBadge status={job.status} t={t}/>{job.square_footage&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.square_footage} SF</span>}</div>
+                            <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
+                            {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
+                            <div style={{fontSize:13,color:"#666",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
+                            <div style={{display:"flex",gap:12,flexWrap:"wrap"}}><span style={{fontSize:12,color:"#999"}}>📅 {formatDate(job.date)} {job.time}</span><span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>{job.assigned_to&&<span style={{fontSize:12,color:"#999"}}>👷 {job.assigned_to}</span>}</div>
+                            <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}>
+                              {job.client_phone&&<span style={{fontSize:11,color:"#2563EB",background:"#EFF6FF",borderRadius:10,padding:"2px 8px",fontWeight:600}}>📞</span>}
+                              {cc>0&&<span style={{fontSize:11,color:"#16A34A",background:"#F0FDF4",borderRadius:10,padding:"2px 8px",fontWeight:600}}>✅ {cc}</span>}
+                              {session.role==="owner"&&job.company&&<span style={{fontSize:11,color:"#555",background:"#F3F4F6",borderRadius:10,padding:"2px 8px",fontWeight:600}}>🏢 {job.company}</span>}
                             </div>
-                            {ap&&<img src={ap.url} alt="" style={{width:74,height:60,objectFit:"cover",borderRadius:8,border:"2px solid #E5E7EB",flexShrink:0}}/>}
                           </div>
+                          {ap&&<img src={ap.url} alt="" style={{width:74,height:60,objectFit:"cover",borderRadius:8,border:"2px solid #E5E7EB",flexShrink:0}}/>}
                         </div>
-                      );
-                    })}
-                  </div>
-                }
-              </>
-            )}
+                      </div>
+                    );
+                  })}
+                </div>
+              }
+            </>)}
             {tab==="calendar"&&<CalendarView jobs={jobs} onSelectJob={openJob} t={t}/>}
             {tab==="companies"&&session.role==="owner"&&<CompaniesTab t={t} showToast={showToast} allJobs={jobs} allInstallers={allInstallers}/>}
             {tab==="contacts"&&isAdmin&&<ContactsTab session={session} t={t} showToast={showToast}/>}
+            {tab==="reports"&&<ReportsTab session={session} t={t} showToast={showToast}/>}
           </>
         )}
       </div>
@@ -671,21 +794,22 @@ export default function App() {
 
       {showForm&&isAdmin&&<JobForm onSave={saveJob} onCancel={()=>setShowForm(false)} saving={saving} installerNames={installerNames} t={t}/>}
       {editingJob&&isAdmin&&<JobForm onSave={updateJob} onCancel={()=>setEditingJob(null)} saving={saving} installerNames={installerNames} initial={editingJob} t={t}/>}
+      {showPricingAdmin&&session.role==="admin"&&<PricingConfig company={session.company} t={t} showToast={showToast} onClose={()=>setShowPricingAdmin(false)}/>}
       {showAdmins&&session.role==="owner"&&(
         <div style={{position:"fixed",inset:0,background:"#00000077",display:"flex",alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
-          <AdminManagerModal onClose={()=>setShowAdmins(false)} t={t}/>
+          <AdminMgr onClose={()=>setShowAdmins(false)} t={t}/>
         </div>
       )}
       {showInstallers&&isAdmin&&(
         <div style={{position:"fixed",inset:0,background:"#00000077",display:"flex",alignItems:"center",justifyContent:"center",zIndex:990,padding:16}}>
-          <InstallerManagerModal session={session} onClose={()=>{setShowInstallers(false);loadInstallerNames();}} t={t}/>
+          <InstallerMgr session={session} onClose={()=>{setShowInstallers(false);loadInstallerNames();}} t={t}/>
         </div>
       )}
     </div>
   );
 }
 
-function AdminManagerModal({ onClose, t }) {
+function AdminMgr({ onClose, t }) {
   const [admins,setAdmins]=useState([]); const [name,setName]=useState(""); const [company,setCompany]=useState(""); const [pw,setPw]=useState(""); const [saving,setSaving]=useState(false); const [msg,setMsg]=useState("");
   const load=async()=>{ const {data}=await supabase.from("admins").select("*").order("company"); if(data) setAdmins(data); };
   useEffect(()=>{ load(); },[]);
@@ -697,7 +821,7 @@ function AdminManagerModal({ onClose, t }) {
       {msg&&<div style={{background:"#F0FDF4",color:"#16A34A",borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:700,marginBottom:12}}>{msg}</div>}
       <div style={{background:"#F9F7F4",borderRadius:12,padding:14,marginBottom:18}}>
         <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>{t.newAdmin}</div>
-        <FF label={t.adminName} value={name} onChange={setName} placeholder="John"/><FF label={t.company} value={company} onChange={setCompany} placeholder="CasaLuma Group"/><FF label={t.password} value={pw} onChange={setPw} type="password" placeholder="••••••••"/>
+        <FF label={t.adminName} value={name} onChange={setName} placeholder="John"/><FF label={t.company} value={company} onChange={setCompany} placeholder="MC Granite"/><FF label={t.password} value={pw} onChange={setPw} type="password" placeholder="••••••••"/>
         <button onClick={add} disabled={saving} style={{width:"100%",background:"#B8924A",color:"#fff",border:"none",borderRadius:8,padding:10,fontWeight:700,cursor:"pointer",fontSize:13}}>{saving?t.saving:t.addBtn}</button>
       </div>
       <div style={{fontSize:12,fontWeight:800,color:"#666",marginBottom:8,textTransform:"uppercase",letterSpacing:0.5}}>{t.registered} ({admins.length})</div>
@@ -706,7 +830,7 @@ function AdminManagerModal({ onClose, t }) {
   );
 }
 
-function InstallerManagerModal({ session, onClose, t }) {
+function InstallerMgr({ session, onClose, t }) {
   const [installers,setInstallers]=useState([]); const [name,setName]=useState(""); const [pw,setPw]=useState(""); const [saving,setSaving]=useState(false); const [msg,setMsg]=useState("");
   const company=session.role==="owner"?null:session.company;
   const load=async()=>{ let q=supabase.from("installers").select("*").order("name"); if(company) q=q.eq("company",company); const {data}=await q; if(data) setInstallers(data); };
@@ -726,3 +850,4 @@ function InstallerManagerModal({ session, onClose, t }) {
     </div>
   );
 }
+
