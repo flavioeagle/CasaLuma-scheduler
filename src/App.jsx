@@ -60,7 +60,8 @@ function PhotoGrid({photos,onDelete,canDelete}) {
 }
 function PhotoAdd({onAdd,uploading}) {
   const ref=useRef();
-  return <><button onClick={()=>ref.current.click()} disabled={uploading} style={{width:88,height:68,border:"2px dashed #B8924A",borderRadius:8,background:"#FFFBF5",color:"#B8924A",fontSize:uploading?14:22,cursor:uploading?"not-allowed":"pointer",marginTop:6,display:"flex",alignItems:"center",justifyContent:"center"}}>{uploading?"...":"+"}</button><input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>Array.from(e.target.files).forEach(f=>onAdd(f))}/></>;
+  const handle=async(e)=>{ const files=Array.from(e.target.files); for(const f of files){ await onAdd(f); } e.target.value=""; };
+  return <><button onClick={()=>ref.current.click()} disabled={uploading} style={{width:88,height:68,border:"2px dashed #B8924A",borderRadius:8,background:"#FFFBF5",color:"#B8924A",fontSize:uploading?14:22,cursor:uploading?"not-allowed":"pointer",marginTop:6,display:"flex",alignItems:"center",justifyContent:"center"}}>{uploading?"...":"+"}</button><input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={handle}/></>;
 }
 function LangBtn({lang,setLang}) {
   const [open,setOpen]=useState(false);
