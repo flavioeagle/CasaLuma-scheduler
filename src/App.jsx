@@ -80,6 +80,29 @@ function LangBtn({lang,setLang}) {
   const f={pt:"🇧🇷",en:"🇺🇸",es:"🇪🇸"};
   return <div style={{position:"relative"}}><button onClick={()=>setOpen(o=>!o)} style={{background:"#2A2A2A",border:"1px solid #444",borderRadius:20,padding:"3px 10px",fontSize:14,cursor:"pointer"}}>{f[lang]}</button>{open&&<div style={{position:"absolute",right:0,top:34,background:"#2A2A2A",border:"1px solid #444",borderRadius:10,padding:6,zIndex:200,display:"flex",flexDirection:"column",gap:4}}>{Object.entries(f).map(([l,fl])=><button key={l} onClick={()=>{setLang(l);localStorage.setItem("pf_lang",l);setOpen(false);}} style={{background:lang===l?"#B8924A22":"none",border:"none",borderRadius:6,padding:"5px 8px",fontSize:16,cursor:"pointer"}}>{fl}</button>)}</div>}</div>;
 }
+function VerticalSwitcher({vertical,onSwitch}) {
+  const [open,setOpen]=useState(false);
+  const vTheme=getVertical(vertical);
+  return (
+    <div style={{position:"relative"}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:5,background:vTheme.accent+"22",border:`1px solid ${vTheme.accent}66`,borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700,color:vTheme.accent,cursor:"pointer"}}>
+        {vTheme.icon} {vTheme.label} <span style={{fontSize:8}}>▾</span>
+      </button>
+      {open && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:199}}/>
+          <div style={{position:"absolute",left:0,top:34,background:"#2A2A2A",border:"1px solid #444",borderRadius:10,padding:6,zIndex:200,display:"flex",flexDirection:"column",gap:3,minWidth:170}}>
+            {Object.entries(VERTICALS).map(([id,v])=>(
+              <button key={id} onClick={()=>{onSwitch(id);setOpen(false);}} style={{display:"flex",alignItems:"center",gap:8,background:vertical===id?v.accent+"22":"none",border:"none",borderRadius:6,padding:"7px 9px",fontSize:13,fontWeight:600,color:vertical===id?v.accent:"#ccc",cursor:"pointer",textAlign:"left"}}>
+                {v.icon} {v.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 // ─── TRANSLATIONS ─────────────────────────────────────────────────────
 const L = {
@@ -164,6 +187,7 @@ const L = {
 function Login({onLogin,lang,setLang}) {
   const t=L[lang];
   const urlVertical=(()=>{ try{ const p=new URLSearchParams(window.location.search).get("vertical"); return VERTICALS[p]?p:null; }catch{ return null; } })();
+  const showOwner=(()=>{ try{ return new URLSearchParams(window.location.search).get("owner")==="1"; }catch{ return false; } })();
   const [ownerVertical,setOwnerVertical]=useState(urlVertical||"construction");
   const [mode,setMode]=useState(null);
   const [pw,setPw]=useState(""); const [name,setName]=useState(""); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
@@ -206,7 +230,7 @@ function Login({onLogin,lang,setLang}) {
           </div>
         )}
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {[{id:"owner"},{id:"admin"},{id:"installer"},{id:"salesperson"}].map(({id})=>(
+          {[{id:"owner"},{id:"admin"},{id:"installer"},{id:"salesperson"}].filter(({id})=>id!=="owner"||showOwner).map(({id})=>(
             <button key={id} onClick={()=>{setMode(id);setErr("");setPw("");setName("");}} style={{background:id==="owner"?"#1A1A1A":"#1E1E1E",border:id==="owner"?`2px solid ${vTheme.accent}`:"1px solid #2A2A2A",borderRadius:14,padding:"16px 20px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14,transition:"border-color 0.2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=vTheme.accent} onMouseLeave={e=>e.currentTarget.style.borderColor=id==="owner"?vTheme.accent:"#2A2A2A"}>
               <div style={{fontSize:28}}>{t.roles[id].split(" ")[0]}</div>
               <div><div style={{color:id==="owner"?vTheme.accent:"#fff",fontWeight:800,fontSize:15}}>{t.roles[id].slice(3)}</div><div style={{fontSize:12,color:"#555",marginTop:2}}>{t.roleSubs[id]}</div></div>
@@ -964,7 +988,7 @@ function CompaniesTab({t,showToast,allJobs,allInstallers,session}) {
   const [installerNames,setInstallerNames]=useState([]); const [salespersonNames,setSalespersonNames]=useState([]);
   const [cServices,setCServices]=useState([]); const [showPricing,setShowPricing]=useState(false); const [showServices,setShowServices]=useState(false);
   const [showAdmins,setShowAdmins]=useState(false);
-  const loadAdmins=async()=>{ const {data}=await db.from("admins").select("*").order("company"); if(data) setAdmins(data); };
+  const loadAdmins=async()=>{ const {data}=await db.from("admins").select("*").eq("vertical",session.vertical||"construction").order("company"); if(data) setAdmins(data); };
   useEffect(()=>{ loadAdmins(); },[]);
   const openCompany=async(admin)=>{
     setSelected(admin); setCTab("jobs");
@@ -989,27 +1013,21 @@ function CompaniesTab({t,showToast,allJobs,allInstallers,session}) {
   const getStats=c=>{ const cj=allJobs.filter(j=>j.company===c); return {active:cj.filter(j=>j.status==="scheduled"||j.status==="in_progress").length,total:cj.length,inst:allInstallers.filter(i=>i.company===c).length}; };
 
   // Admins manager
-  const [aName,setAName]=useState(""); const [aCo,setACo]=useState(""); const [aPw,setAPw]=useState(""); const [aVertical,setAVertical]=useState("construction"); const [aSaving,setASaving]=useState(false);
+  const [aName,setAName]=useState(""); const [aCo,setACo]=useState(""); const [aPw,setAPw]=useState(""); const [aSaving,setASaving]=useState(false);
+  const sessionVTheme=getVertical(session.vertical);
   const addAdmin=async()=>{
     if(!aName||!aCo||!aPw){alert("Fill all fields.");return;}
-    setASaving(true); const {error}=await db.from("admins").insert([{name:aName,company:aCo,password:aPw,vertical:aVertical}]); setASaving(false);
+    setASaving(true); const {error}=await db.from("admins").insert([{name:aName,company:aCo,password:aPw,vertical:session.vertical||"construction"}]); setASaving(false);
     if(error){showToast(t.toasts.errDup,"error");return;} showToast(t.toasts.adminAdded); setAName("");setACo("");setAPw(""); loadAdmins();
   };
 
   if(showAdmins) return (
     <div>
       <button onClick={()=>setShowAdmins(false)} style={{background:"none",border:"1px solid #E5E7EB",borderRadius:20,padding:"5px 14px",fontSize:12,cursor:"pointer",color:"#666",marginBottom:16}}>← {t.companies}</button>
-      <div style={{fontSize:18,fontWeight:800,marginBottom:16}}>⚙️ {t.admins}</div>
+      <div style={{fontSize:18,fontWeight:800,marginBottom:6}}>⚙️ {t.admins}</div>
+      <div style={{display:"inline-flex",alignItems:"center",gap:6,background:sessionVTheme.accent+"18",color:sessionVTheme.accent,border:`1px solid ${sessionVTheme.accent}44`,borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,marginBottom:16}}>{sessionVTheme.icon} {sessionVTheme.label}</div>
       <Card style={{marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>{t.newAdmin}</div>
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:4}}>Vertical</label>
-          <div style={{display:"flex",gap:6}}>
-            {Object.entries(VERTICALS).map(([id,v])=>(
-              <button key={id} onClick={()=>setAVertical(id)} style={{flex:1,padding:"8px 4px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:`1px solid ${aVertical===id?v.accent:"#E5E7EB"}`,background:aVertical===id?v.accent+"18":"#fff",color:aVertical===id?v.accent:"#888"}}>{v.icon} {v.label}</button>
-            ))}
-          </div>
-        </div>
+        <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>{t.newAdmin} — {sessionVTheme.label}</div>
         <Input label={t.adminName} value={aName} onChange={setAName} placeholder="John"/>
         <Input label={t.adminCompany} value={aCo} onChange={setACo} placeholder="MC Granite"/>
         <Input label="Password" value={aPw} onChange={setAPw} type="password"/>
@@ -1231,11 +1249,13 @@ export default function App() {
 
   const login=(s)=>{ setSession(s); localStorage.setItem(SESSION_KEY,JSON.stringify(s)); };
   const logout=()=>{ setSession(null); localStorage.removeItem(SESSION_KEY); };
+  const switchVertical=(v)=>{ setSession(prev=>{ const next={...prev,vertical:v}; localStorage.setItem(SESSION_KEY,JSON.stringify(next)); return next; }); setTab("list"); setView("main"); };
 
   const loadJobs=useCallback(async()=>{
     if(!session) return;
     setLoading(true);
     let q=db.from("jobs").select("*").order("date",{ascending:true});
+    if(session.role==="owner") q=q.eq("vertical",session.vertical||"construction");
     if(session.role==="admin") q=q.eq("company",session.company);
     if(session.role==="installer") q=q.or(`installer.eq.${session.name},assigned_to.eq.${session.name}`);
     if(session.role==="salesperson") q=q.eq("salesperson",session.name);
@@ -1314,7 +1334,10 @@ export default function App() {
       <div style={{background:"#1A1A1A",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,borderBottom:`3px solid ${vTheme.accent}`,position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:20,fontWeight:900,color:vTheme.accent,letterSpacing:-1}}>{t.brand}</span>
-          <span style={{fontSize:9,color:vTheme.accent,background:vTheme.accent+"22",borderRadius:10,padding:"1px 7px",fontWeight:700}}>{vTheme.icon} {vTheme.label}</span>
+          {session.role==="owner"
+            ? <VerticalSwitcher vertical={session.vertical} onSwitch={switchVertical}/>
+            : <span style={{fontSize:9,color:vTheme.accent,background:vTheme.accent+"22",borderRadius:10,padding:"1px 7px",fontWeight:700}}>{vTheme.icon} {vTheme.label}</span>
+          }
           {session.company&&<span style={{fontSize:10,color:"#555",letterSpacing:1,textTransform:"uppercase"}}>{session.company}</span>}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
@@ -1337,7 +1360,7 @@ export default function App() {
             {tab==="list"&&(
               <>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-                  <div><div style={{fontSize:20,fontWeight:800,color:"#1A1A1A"}}>{session.role==="installer"||session.role==="salesperson"?`${t.nav.jobs} · ${session.name}`:session.role==="admin"?session.company:t.nav.jobs}</div><div style={{fontSize:12,color:"#999"}}>{filteredJobs.length} {session.role==="admin"?"jobs":"jobs"}</div></div>
+                  <div><div style={{fontSize:20,fontWeight:800,color:"#1A1A1A",display:"flex",alignItems:"center",gap:8}}>{session.role==="installer"||session.role==="salesperson"?`${t.nav.jobs} · ${session.name}`:session.role==="admin"?session.company:t.nav.jobs}{session.role==="owner"&&<span style={{fontSize:11,background:vTheme.accent+"18",color:vTheme.accent,border:`1px solid ${vTheme.accent}44`,borderRadius:20,padding:"2px 10px",fontWeight:700}}>{vTheme.icon} {vTheme.label}</span>}</div><div style={{fontSize:12,color:"#999"}}>{filteredJobs.length} {session.role==="admin"?"jobs":"jobs"}</div></div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                     {["all",...Object.keys(t.jobStatus)].map(k=><button key={k} onClick={()=>setFilterStatus(k)} style={{background:filterStatus===k?"#1A1A1A":"#fff",color:filterStatus===k?"#B8924A":"#666",border:`1px solid ${filterStatus===k?"#1A1A1A":"#E5E7EB"}`,borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{k==="all"?t.all:t.jobStatus[k]}</button>)}
                     <button onClick={loadJobs} style={{background:"#F3F4F6",color:"#555",border:"1px solid #E5E7EB",borderRadius:20,padding:"4px 10px",fontSize:11,cursor:"pointer"}}>↻</button>
