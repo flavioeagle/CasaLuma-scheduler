@@ -8,6 +8,18 @@ const OWNER_PW = "Faf1022@";
 const SESSION_KEY = "profield_session";
 
 const DEFAULT_SERVICES = ["Countertop Installation","Cabinet Installation","Kitchen Remodeling","Flooring","Tile Work","Bathroom Remodel","Landscaping","Roof Work","Pool Service","Cleaning","Painting","Electrical","Plumbing","Other"];
+
+const CLEANING_SERVICES = ["Limpeza Padrão","Limpeza Profunda","Pós-Obra","Limpeza de Mudança","Limpeza de Escritório","Outro"];
+const CLINIC_SERVICES = ["Consulta de Rotina","Retorno","Avaliação Inicial","Procedimento","Exame","Outro"];
+const FREQUENCY_OPTS = ["Avulso","Semanal","Quinzenal","Mensal"];
+const JOB_STATUS_OPTS = ["scheduled","in_progress","completed","cancelled"];
+
+const VERTICALS = {
+  construction: { label:"Construction", icon:"🧱", accent:"#B8924A", services:DEFAULT_SERVICES },
+  cleaning:     { label:"House Cleaning", icon:"🧽", accent:"#7C9885", services:CLEANING_SERVICES },
+  clinic:       { label:"Clinics", icon:"🩺", accent:"#5B7C99", services:CLINIC_SERVICES },
+};
+function getVertical(v){ return VERTICALS[v] || VERTICALS.construction; }
 const SC = {scheduled:"#B8924A",in_progress:"#2563EB",completed:"#16A34A",cancelled:"#DC2626"};
 const SBG = {scheduled:"#FDF6EC",in_progress:"#EFF6FF",completed:"#F0FDF4",cancelled:"#FEF2F2"};
 
@@ -151,6 +163,8 @@ const L = {
 // ─── LOGIN ─────────────────────────────────────────────────────────────
 function Login({onLogin,lang,setLang}) {
   const t=L[lang];
+  const urlVertical=(()=>{ try{ const p=new URLSearchParams(window.location.search).get("vertical"); return VERTICALS[p]?p:null; }catch{ return null; } })();
+  const [ownerVertical,setOwnerVertical]=useState(urlVertical||"construction");
   const [mode,setMode]=useState(null);
   const [pw,setPw]=useState(""); const [name,setName]=useState(""); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
   const [names,setNames]=useState([]);
@@ -161,29 +175,41 @@ function Login({onLogin,lang,setLang}) {
     db.from(tbl).select("name").order("name").then(({data})=>{ if(data) setNames(data.map(r=>r.name)); });
   },[mode]);
   const handle=async()=>{
-    if(mode==="owner"){if(pw===OWNER_PW) onLogin({role:"owner",name:"Owner"}); else setErr(t.wrongPw); return;}
+    if(mode==="owner"){if(pw===OWNER_PW) onLogin({role:"owner",name:"Owner",vertical:ownerVertical}); else setErr(t.wrongPw); return;}
     if(!name){setErr(t.selectNameErr);return;} if(!pw){setErr(t.enterPwErr);return;}
     setLoading(true);
     const tbl=mode==="admin"?"admins":mode==="installer"?"installers":"salespeople";
     const {data,error}=await db.from(tbl).select("*").eq("name",name).eq("password",pw).single();
     setLoading(false);
     if(error||!data){setErr(t.wrongCreds);return;}
-    onLogin({role:mode,name:data.name,company:data.company,id:data.id});
+    let vertical=data.vertical;
+    if(!vertical && mode!=="admin"){
+      const {data:adminRow}=await db.from("admins").select("vertical").eq("company",data.company).single();
+      vertical=adminRow?.vertical;
+    }
+    onLogin({role:mode,name:data.name,company:data.company,id:data.id,vertical:vertical||"construction"});
   };
   const flags={pt:"🇧🇷",en:"🇺🇸",es:"🇪🇸"};
+  const vTheme=getVertical(urlVertical||"construction");
   if(!mode) return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F0F0F 0%,#1A1A1A 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",padding:20}}>
       <div style={{maxWidth:380,width:"100%"}}>
         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:20,gap:8}}>{Object.entries(flags).map(([l,f])=><button key={l} onClick={()=>{setLang(l);localStorage.setItem("pf_lang",l);}} style={{background:lang===l?"#B8924A22":"#2A2A2A",border:`1px solid ${lang===l?"#B8924A":"#333"}`,borderRadius:10,padding:"5px 10px",fontSize:16,cursor:"pointer"}}>{f}</button>)}</div>
-        <div style={{textAlign:"center",marginBottom:40}}>
-          <div style={{fontSize:42,fontWeight:900,color:"#B8924A",letterSpacing:-2,marginBottom:4}}>{t.brand}</div>
+        <div style={{textAlign:"center",marginBottom:urlVertical?16:40}}>
+          <div style={{fontSize:42,fontWeight:900,color:vTheme.accent,letterSpacing:-2,marginBottom:4}}>{t.brand}</div>
           <div style={{fontSize:12,color:"#555",letterSpacing:4,textTransform:"uppercase"}}>{t.sub}</div>
         </div>
+        {urlVertical && (
+          <div style={{display:"flex",alignItems:"center",gap:10,background:vTheme.accent+"15",border:`1px solid ${vTheme.accent}44`,borderRadius:12,padding:"10px 14px",marginBottom:24}}>
+            <span style={{fontSize:22}}>{vTheme.icon}</span>
+            <span style={{fontSize:13,fontWeight:700,color:vTheme.accent}}>{vTheme.label}</span>
+          </div>
+        )}
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           {[{id:"owner"},{id:"admin"},{id:"installer"},{id:"salesperson"}].map(({id})=>(
-            <button key={id} onClick={()=>{setMode(id);setErr("");setPw("");setName("");}} style={{background:id==="owner"?"#1A1A1A":"#1E1E1E",border:id==="owner"?"2px solid #B8924A":"1px solid #2A2A2A",borderRadius:14,padding:"16px 20px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14,transition:"border-color 0.2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="#B8924A"} onMouseLeave={e=>e.currentTarget.style.borderColor=id==="owner"?"#B8924A":"#2A2A2A"}>
+            <button key={id} onClick={()=>{setMode(id);setErr("");setPw("");setName("");}} style={{background:id==="owner"?"#1A1A1A":"#1E1E1E",border:id==="owner"?`2px solid ${vTheme.accent}`:"1px solid #2A2A2A",borderRadius:14,padding:"16px 20px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14,transition:"border-color 0.2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=vTheme.accent} onMouseLeave={e=>e.currentTarget.style.borderColor=id==="owner"?vTheme.accent:"#2A2A2A"}>
               <div style={{fontSize:28}}>{t.roles[id].split(" ")[0]}</div>
-              <div><div style={{color:id==="owner"?"#B8924A":"#fff",fontWeight:800,fontSize:15}}>{t.roles[id].slice(3)}</div><div style={{fontSize:12,color:"#555",marginTop:2}}>{t.roleSubs[id]}</div></div>
+              <div><div style={{color:id==="owner"?vTheme.accent:"#fff",fontWeight:800,fontSize:15}}>{t.roles[id].slice(3)}</div><div style={{fontSize:12,color:"#555",marginTop:2}}>{t.roleSubs[id]}</div></div>
             </button>
           ))}
         </div>
@@ -193,13 +219,23 @@ function Login({onLogin,lang,setLang}) {
   return (
     <div style={{minHeight:"100vh",background:"#1A1A1A",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",padding:20}}>
       <div style={{maxWidth:360,width:"100%"}}>
-        <div style={{fontSize:36,fontWeight:900,color:"#B8924A",letterSpacing:-2,marginBottom:2,textAlign:"center"}}>{t.brand}</div>
+        <div style={{fontSize:36,fontWeight:900,color:vTheme.accent,letterSpacing:-2,marginBottom:2,textAlign:"center"}}>{t.brand}</div>
         <div style={{fontSize:11,color:"#555",letterSpacing:3,textTransform:"uppercase",marginBottom:28,textAlign:"center"}}>{t.roles[mode]}</div>
         <div style={{background:"#222",borderRadius:16,padding:22}}>
+          {mode==="owner" && (
+            <div style={{marginBottom:14}}>
+              <label style={{fontSize:12,color:"#aaa",fontWeight:700,display:"block",marginBottom:6}}>Vertical</label>
+              <div style={{display:"flex",gap:6}}>
+                {Object.entries(VERTICALS).map(([id,v])=>(
+                  <button key={id} onClick={()=>setOwnerVertical(id)} style={{flex:1,padding:"8px 4px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:`1px solid ${ownerVertical===id?v.accent:"#333"}`,background:ownerVertical===id?v.accent+"22":"#1A1A1A",color:ownerVertical===id?v.accent:"#888"}}>{v.icon} {v.label}</button>
+                ))}
+              </div>
+            </div>
+          )}
           {mode!=="owner"&&<div style={{marginBottom:14}}><label style={{fontSize:12,color:"#aaa",fontWeight:700,display:"block",marginBottom:6}}>{t.yourName}</label><select value={name} onChange={e=>{setName(e.target.value);setErr("");}} style={{width:"100%",border:"1px solid #333",borderRadius:8,padding:"10px 12px",fontSize:14,background:"#1A1A1A",color:"#fff",boxSizing:"border-box"}}><option value="">{t.selectName}</option>{names.map(n=><option key={n} value={n}>{n}</option>)}</select></div>}
           <div style={{marginBottom:14}}><label style={{fontSize:12,color:"#aaa",fontWeight:700,display:"block",marginBottom:6}}>{t.password}</label><input type="password" value={pw} onChange={e=>{setPw(e.target.value);setErr("");}} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&handle()} style={{width:"100%",border:"1px solid #333",borderRadius:8,padding:"10px 12px",fontSize:14,background:"#1A1A1A",color:"#fff",boxSizing:"border-box",outline:"none"}}/></div>
           {err&&<div style={{color:"#DC2626",fontSize:13,marginBottom:10,fontWeight:600}}>{err}</div>}
-          <button onClick={handle} disabled={loading} style={{width:"100%",background:"#B8924A",color:"#fff",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:15,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>{loading?t.verifying:t.enter}</button>
+          <button onClick={handle} disabled={loading} style={{width:"100%",background:vTheme.accent,color:"#fff",border:"none",borderRadius:10,padding:12,fontWeight:800,fontSize:15,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>{loading?t.verifying:t.enter}</button>
           <button onClick={()=>{setMode(null);setErr("");}} style={{width:"100%",background:"none",color:"#555",border:"1px solid #333",borderRadius:10,padding:9,cursor:"pointer",fontSize:13}}>{t.back}</button>
         </div>
       </div>
@@ -209,42 +245,111 @@ function Login({onLogin,lang,setLang}) {
 
 // ─── JOB FORM ─────────────────────────────────────────────────────────
 function JobForm({onSave,onCancel,saving,initial,session,t,companyServices,installerNames,salespersonNames}) {
-  const blank={work_order:"",client:"",client_phone:"",client_email:"",builder:"",builder_contact:"",builder_phone:"",builder_note:"—",address:"",access_notes:"",date:"",time:"08:00",service:(companyServices&&companyServices[0])||DEFAULT_SERVICES[0],sf:"",installer:"",installer_phone:"",estimated_hours:4,status:"scheduled",scope:"",salesperson:""};
+  const vertical = session?.vertical || "construction";
+  const blank={
+    work_order:"",client:"",client_phone:"",client_email:"",builder:"",builder_contact:"",builder_phone:"",builder_note:"—",
+    address:"",access_notes:"",date:"",time:"08:00",
+    service:(companyServices&&companyServices[0])||getVertical(vertical).services[0],
+    sf:"",installer:"",installer_phone:"",estimated_hours:4,status:"scheduled",scope:"",salesperson:"",
+    bedrooms:"",bathrooms:"",frequency:"Avulso",checklist:[],
+    patient_name:"",provider:"",visit_type:"",duration_minutes:30,room:"",
+  };
   const [f,setF]=useState(initial?{...blank,...initial}:blank);
+  const [checklistInput,setChecklistInput]=useState("");
   const set=k=>v=>setF(p=>({...p,[k]:v}));
-  const services=companyServices&&companyServices.length>0?companyServices:DEFAULT_SERVICES;
+  const services=companyServices&&companyServices.length>0?companyServices:getVertical(vertical).services;
   const save=()=>{
-    if(!f.work_order||!f.client||!f.address||!f.date){alert("Fill required fields.");return;}
+    if(vertical==="construction"){
+      if(!f.work_order||!f.client||!f.address||!f.date){alert("Fill required fields.");return;}
+    } else if(vertical==="cleaning"){
+      if(!f.work_order||!f.client||!f.address||!f.date){alert("Fill required fields.");return;}
+    } else if(vertical==="clinic"){
+      if(!f.work_order||!f.patient_name||!f.date){alert("Fill required fields.");return;}
+    }
     const {company:_c,id:_id,photos:_p,created_at:_ca,...rest}=f;
-    onSave({...rest,sf:rest.sf?Number(rest.sf):null});
+    onSave({...rest,sf:rest.sf?Number(rest.sf):null,bedrooms:rest.bedrooms?Number(rest.bedrooms):null,bathrooms:rest.bathrooms?Number(rest.bathrooms):null,duration_minutes:rest.duration_minutes?Number(rest.duration_minutes):null,vertical});
   };
   const statusOpts=Object.entries(t.jobStatus).map(([v,label])=>({value:v,label}));
   const builderNoteOpts=t.builderNoteOpts.map(o=>({value:o,label:o}));
+  const addChecklistItem=()=>{ if(!checklistInput.trim()) return; setF(p=>({...p,checklist:[...(p.checklist||[]),{text:checklistInput.trim(),done:false}]})); setChecklistInput(""); };
+  const toggleChecklistItem=(i)=>{ setF(p=>({...p,checklist:p.checklist.map((c,idx)=>idx===i?{...c,done:!c.done}:c)})); };
+  const removeChecklistItem=(i)=>{ setF(p=>({...p,checklist:p.checklist.filter((_,idx)=>idx!==i)})); };
+
   return (
     <Modal onClose={onCancel} maxWidth={580}>
-      <div style={{fontSize:16,fontWeight:800,marginBottom:18}}>{initial?t.editJob:`➕ ${t.newJob.slice(2)}`}</div>
+      <div style={{fontSize:16,fontWeight:800,marginBottom:18}}>{getVertical(vertical).icon} {initial?t.editJob:`➕ ${t.newJob.slice(2)}`}</div>
       <Input label={t.fields.workOrder} value={f.work_order} onChange={set("work_order")} placeholder="WO-2026-001" required/>
-      <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.client} value={f.client} onChange={set("client")} placeholder="John Smith" required/></div><div style={{flex:1}}><Input label={t.fields.clientPhone} value={f.client_phone} onChange={set("client_phone")} type="tel" placeholder="(770) 555-0000"/></div></div>
-      <Input label={t.fields.clientEmail} value={f.client_email} onChange={set("client_email")} type="email" placeholder="john@email.com"/>
-      <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.builder} value={f.builder} onChange={set("builder")} placeholder="Brown Haven Homes"/></div><div style={{flex:1}}><Input label={t.fields.builderContact} value={f.builder_contact} onChange={set("builder_contact")} placeholder="Mike"/></div></div>
-      <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.builderPhone} value={f.builder_phone} onChange={set("builder_phone")} type="tel"/></div><div style={{flex:1}}><Select label={t.fields.builderNote} value={f.builder_note} onChange={set("builder_note")} options={builderNoteOpts}/></div></div>
-      <Input label={t.fields.address} value={f.address} onChange={set("address")} placeholder="123 Main St, Marietta, GA" required/>
-      <Input label={t.fields.access} value={f.access_notes} onChange={set("access_notes")} multiline placeholder="Gate code, parking..."/>
-      <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.date} value={f.date} onChange={set("date")} type="date" required/></div><div style={{flex:1}}><Input label={t.fields.time} value={f.time} onChange={set("time")} type="time"/></div></div>
-      <div style={{display:"flex",gap:10}}>
-        <div style={{flex:2}}><Select label={t.fields.service} value={f.service} onChange={set("service")} options={services}/></div>
-        <div style={{flex:1}}><Input label={t.fields.sf} value={f.sf} onChange={set("sf")} type="number" placeholder="88"/></div>
-      </div>
-      <div style={{display:"flex",gap:10}}>
-        <div style={{flex:1}}><Select label={t.fields.installer} value={f.installer||""} onChange={set("installer")} options={[{value:"",label:t.selectName},...installerNames.map(n=>({value:n,label:n}))]}/></div>
-        <div style={{flex:1}}><Input label={t.fields.installerPhone} value={f.installer_phone} onChange={set("installer_phone")} type="tel"/></div>
-      </div>
-      {salespersonNames&&salespersonNames.length>0&&<Select label={t.fields.salesperson} value={f.salesperson||""} onChange={set("salesperson")} options={[{value:"",label:t.selectName},...salespersonNames.map(n=>({value:n,label:n}))]}/>}
-      <div style={{display:"flex",gap:10}}>
-        <div style={{flex:1}}><Input label={t.fields.hours} value={f.estimated_hours} onChange={set("estimated_hours")} type="number"/></div>
-        <div style={{flex:1}}><Select label={t.fields.status} value={f.status} onChange={set("status")} options={statusOpts}/></div>
-      </div>
-      <Input label={t.fields.scope} value={f.scope} onChange={set("scope")} multiline placeholder="Describe the work..."/>
+
+      {vertical==="clinic" ? (
+        <>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label="Paciente" value={f.patient_name} onChange={set("patient_name")} placeholder="Nome do paciente" required/></div><div style={{flex:1}}><Input label={t.fields.clientPhone} value={f.client_phone} onChange={set("client_phone")} type="tel" placeholder="(770) 555-0000"/></div></div>
+          <Input label={t.fields.clientEmail} value={f.client_email} onChange={set("client_email")} type="email" placeholder="paciente@email.com"/>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Select label="Profissional" value={f.provider||""} onChange={set("provider")} options={[{value:"",label:t.selectName},...installerNames.map(n=>({value:n,label:n}))]}/></div><div style={{flex:1}}><Input label="Sala / Consultório" value={f.room} onChange={set("room")} placeholder="Sala 2"/></div></div>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.date} value={f.date} onChange={set("date")} type="date" required/></div><div style={{flex:1}}><Input label={t.fields.time} value={f.time} onChange={set("time")} type="time"/></div></div>
+          <div style={{display:"flex",gap:10}}>
+            <div style={{flex:2}}><Select label="Tipo de Consulta" value={f.service} onChange={set("service")} options={services}/></div>
+            <div style={{flex:1}}><Input label="Duração (min)" value={f.duration_minutes} onChange={set("duration_minutes")} type="number" placeholder="30"/></div>
+          </div>
+          <Select label={t.fields.status} value={f.status} onChange={set("status")} options={statusOpts}/>
+          <Input label="Observações administrativas" value={f.scope} onChange={set("scope")} multiline placeholder="Notas administrativas (sem dados clínicos sensíveis)..."/>
+        </>
+      ) : vertical==="cleaning" ? (
+        <>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.client} value={f.client} onChange={set("client")} placeholder="Nome do cliente" required/></div><div style={{flex:1}}><Input label={t.fields.clientPhone} value={f.client_phone} onChange={set("client_phone")} type="tel" placeholder="(770) 555-0000"/></div></div>
+          <Input label={t.fields.address} value={f.address} onChange={set("address")} placeholder="123 Main St, Marietta, GA" required/>
+          <Input label={t.fields.access} value={f.access_notes} onChange={set("access_notes")} multiline placeholder="Código do portão, onde estacionar..."/>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.date} value={f.date} onChange={set("date")} type="date" required/></div><div style={{flex:1}}><Input label={t.fields.time} value={f.time} onChange={set("time")} type="time"/></div></div>
+          <div style={{display:"flex",gap:10}}>
+            <div style={{flex:1}}><Input label="Quartos" value={f.bedrooms} onChange={set("bedrooms")} type="number" placeholder="3"/></div>
+            <div style={{flex:1}}><Input label="Banheiros" value={f.bathrooms} onChange={set("bathrooms")} type="number" placeholder="2"/></div>
+            <div style={{flex:1}}><Select label="Frequência" value={f.frequency} onChange={set("frequency")} options={FREQUENCY_OPTS}/></div>
+          </div>
+          <Select label={t.fields.service} value={f.service} onChange={set("service")} options={services}/>
+          <div style={{marginBottom:12}}>
+            <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:6}}>Checklist de Tarefas</label>
+            {(f.checklist||[]).map((c,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                <input type="checkbox" checked={c.done} onChange={()=>toggleChecklistItem(i)} style={{width:16,height:16,accentColor:"#7C9885"}}/>
+                <span style={{flex:1,fontSize:13,textDecoration:c.done?"line-through":"none",color:c.done?"#999":"#333"}}>{c.text}</span>
+                <button onClick={()=>removeChecklistItem(i)} style={{background:"none",border:"none",color:"#DC2626",cursor:"pointer",fontSize:14}}>×</button>
+              </div>
+            ))}
+            <div style={{display:"flex",gap:8}}>
+              <input value={checklistInput} onChange={e=>setChecklistInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addChecklistItem()} placeholder="Ex: Aspirar sala" style={{flex:1,border:"1px solid #E5E7EB",borderRadius:8,padding:"7px 10px",fontSize:13,outline:"none"}}/>
+              <Btn onClick={addChecklistItem} variant="secondary" style={{padding:"7px 12px",fontSize:12}}>+ Add</Btn>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <div style={{flex:1}}><Select label="Equipe responsável" value={f.installer||""} onChange={set("installer")} options={[{value:"",label:t.selectName},...installerNames.map(n=>({value:n,label:n}))]}/></div>
+            <div style={{flex:1}}><Select label={t.fields.status} value={f.status} onChange={set("status")} options={statusOpts}/></div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.client} value={f.client} onChange={set("client")} placeholder="John Smith" required/></div><div style={{flex:1}}><Input label={t.fields.clientPhone} value={f.client_phone} onChange={set("client_phone")} type="tel" placeholder="(770) 555-0000"/></div></div>
+          <Input label={t.fields.clientEmail} value={f.client_email} onChange={set("client_email")} type="email" placeholder="john@email.com"/>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.builder} value={f.builder} onChange={set("builder")} placeholder="Brown Haven Homes"/></div><div style={{flex:1}}><Input label={t.fields.builderContact} value={f.builder_contact} onChange={set("builder_contact")} placeholder="Mike"/></div></div>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.builderPhone} value={f.builder_phone} onChange={set("builder_phone")} type="tel"/></div><div style={{flex:1}}><Select label={t.fields.builderNote} value={f.builder_note} onChange={set("builder_note")} options={builderNoteOpts}/></div></div>
+          <Input label={t.fields.address} value={f.address} onChange={set("address")} placeholder="123 Main St, Marietta, GA" required/>
+          <Input label={t.fields.access} value={f.access_notes} onChange={set("access_notes")} multiline placeholder="Gate code, parking..."/>
+          <div style={{display:"flex",gap:10}}><div style={{flex:1}}><Input label={t.fields.date} value={f.date} onChange={set("date")} type="date" required/></div><div style={{flex:1}}><Input label={t.fields.time} value={f.time} onChange={set("time")} type="time"/></div></div>
+          <div style={{display:"flex",gap:10}}>
+            <div style={{flex:2}}><Select label={t.fields.service} value={f.service} onChange={set("service")} options={services}/></div>
+            <div style={{flex:1}}><Input label={t.fields.sf} value={f.sf} onChange={set("sf")} type="number" placeholder="88"/></div>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <div style={{flex:1}}><Select label={t.fields.installer} value={f.installer||""} onChange={set("installer")} options={[{value:"",label:t.selectName},...installerNames.map(n=>({value:n,label:n}))]}/></div>
+            <div style={{flex:1}}><Input label={t.fields.installerPhone} value={f.installer_phone} onChange={set("installer_phone")} type="tel"/></div>
+          </div>
+          {salespersonNames&&salespersonNames.length>0&&<Select label={t.fields.salesperson} value={f.salesperson||""} onChange={set("salesperson")} options={[{value:"",label:t.selectName},...salespersonNames.map(n=>({value:n,label:n}))]}/>}
+          <div style={{display:"flex",gap:10}}>
+            <div style={{flex:1}}><Input label={t.fields.hours} value={f.estimated_hours} onChange={set("estimated_hours")} type="number"/></div>
+            <div style={{flex:1}}><Select label={t.fields.status} value={f.status} onChange={set("status")} options={statusOpts}/></div>
+          </div>
+          <Input label={t.fields.scope} value={f.scope} onChange={set("scope")} multiline placeholder="Describe the work..."/>
+        </>
+      )}
+
       <div style={{display:"flex",gap:10,marginTop:16}}>
         <Btn onClick={save} disabled={saving} style={{flex:1}}>{saving?t.saving:t.save}</Btn>
         <Btn onClick={onCancel} variant="secondary">{t.cancel}</Btn>
@@ -884,10 +989,10 @@ function CompaniesTab({t,showToast,allJobs,allInstallers,session}) {
   const getStats=c=>{ const cj=allJobs.filter(j=>j.company===c); return {active:cj.filter(j=>j.status==="scheduled"||j.status==="in_progress").length,total:cj.length,inst:allInstallers.filter(i=>i.company===c).length}; };
 
   // Admins manager
-  const [aName,setAName]=useState(""); const [aCo,setACo]=useState(""); const [aPw,setAPw]=useState(""); const [aSaving,setASaving]=useState(false);
+  const [aName,setAName]=useState(""); const [aCo,setACo]=useState(""); const [aPw,setAPw]=useState(""); const [aVertical,setAVertical]=useState("construction"); const [aSaving,setASaving]=useState(false);
   const addAdmin=async()=>{
     if(!aName||!aCo||!aPw){alert("Fill all fields.");return;}
-    setASaving(true); const {error}=await db.from("admins").insert([{name:aName,company:aCo,password:aPw}]); setASaving(false);
+    setASaving(true); const {error}=await db.from("admins").insert([{name:aName,company:aCo,password:aPw,vertical:aVertical}]); setASaving(false);
     if(error){showToast(t.toasts.errDup,"error");return;} showToast(t.toasts.adminAdded); setAName("");setACo("");setAPw(""); loadAdmins();
   };
 
@@ -897,17 +1002,27 @@ function CompaniesTab({t,showToast,allJobs,allInstallers,session}) {
       <div style={{fontSize:18,fontWeight:800,marginBottom:16}}>⚙️ {t.admins}</div>
       <Card style={{marginBottom:16}}>
         <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>{t.newAdmin}</div>
+        <div style={{marginBottom:12}}>
+          <label style={{fontSize:12,color:"#666",fontWeight:700,display:"block",marginBottom:4}}>Vertical</label>
+          <div style={{display:"flex",gap:6}}>
+            {Object.entries(VERTICALS).map(([id,v])=>(
+              <button key={id} onClick={()=>setAVertical(id)} style={{flex:1,padding:"8px 4px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:`1px solid ${aVertical===id?v.accent:"#E5E7EB"}`,background:aVertical===id?v.accent+"18":"#fff",color:aVertical===id?v.accent:"#888"}}>{v.icon} {v.label}</button>
+            ))}
+          </div>
+        </div>
         <Input label={t.adminName} value={aName} onChange={setAName} placeholder="John"/>
         <Input label={t.adminCompany} value={aCo} onChange={setACo} placeholder="MC Granite"/>
         <Input label="Password" value={aPw} onChange={setAPw} type="password"/>
         <Btn onClick={addAdmin} disabled={aSaving}>{aSaving?t.saving:t.add}</Btn>
       </Card>
-      {admins.map(a=>(
+      {admins.map(a=>{
+        const av=getVertical(a.vertical);
+        return (
         <Card key={a.id} style={{marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div><div style={{fontSize:15,fontWeight:700}}>{a.name}</div><div style={{fontSize:12,color:"#888"}}>🏢 {a.company}</div></div>
+          <div><div style={{fontSize:15,fontWeight:700}}>{a.name}</div><div style={{fontSize:12,color:"#888"}}>🏢 {a.company}</div><div style={{fontSize:11,color:av.accent,fontWeight:700,marginTop:2}}>{av.icon} {av.label}</div></div>
           <Btn onClick={()=>removeAdmin(a.id)} variant="danger" style={{padding:"5px 10px",fontSize:12}}>🗑️</Btn>
         </Card>
-      ))}
+      );})}
     </div>
   );
 
@@ -961,7 +1076,7 @@ function CompaniesTab({t,showToast,allJobs,allInstallers,session}) {
       {cTab==="team"&&<TeamManager session={{role:"owner"}} t={t} showToast={showToast} forceCompany={selected.company}/>}
       {cTab==="contacts"&&<ContactsTab session={{role:"owner"}} t={t} showToast={showToast} forceCompany={selected.company}/>}
       {cTab==="reports"&&<Reports session={{role:"admin",company:selected.company,name:selected.name}} t={t} showToast={showToast}/>}
-      {showJobForm&&<JobForm onSave={saveJob} onCancel={()=>{setShowJobForm(false);setEditingJob(null);}} saving={saving} initial={editingJob} session={session} t={t} companyServices={cServices} installerNames={installerNames} salespersonNames={salespersonNames}/>}
+      {showJobForm&&<JobForm onSave={saveJob} onCancel={()=>{setShowJobForm(false);setEditingJob(null);}} saving={saving} initial={editingJob} session={{...session,vertical:selected.vertical||"construction"}} t={t} companyServices={cServices} installerNames={installerNames} salespersonNames={salespersonNames}/>}
       {showPricing&&<PricingModal company={selected.company} t={t} showToast={showToast} onClose={()=>setShowPricing(false)}/>}
       {showServices&&<ServicesModal company={selected.company} t={t} showToast={showToast} onClose={()=>setShowServices(false)}/>}
     </div>
@@ -1191,19 +1306,21 @@ export default function App() {
   ];
 
   if(!session) return <Login onLogin={login} lang={lang} setLang={setLang}/>;
+  const vTheme=getVertical(session.vertical);
 
   return (
     <div style={{fontFamily:"'Inter',sans-serif",background:"#F9F7F4",minHeight:"100vh",paddingBottom:70}}>
       {/* HEADER */}
-      <div style={{background:"#1A1A1A",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,borderBottom:"3px solid #B8924A",position:"sticky",top:0,zIndex:100}}>
+      <div style={{background:"#1A1A1A",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,borderBottom:`3px solid ${vTheme.accent}`,position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:20,fontWeight:900,color:"#B8924A",letterSpacing:-1}}>{t.brand}</span>
+          <span style={{fontSize:20,fontWeight:900,color:vTheme.accent,letterSpacing:-1}}>{t.brand}</span>
+          <span style={{fontSize:9,color:vTheme.accent,background:vTheme.accent+"22",borderRadius:10,padding:"1px 7px",fontWeight:700}}>{vTheme.icon} {vTheme.label}</span>
           {session.company&&<span style={{fontSize:10,color:"#555",letterSpacing:1,textTransform:"uppercase"}}>{session.company}</span>}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
           <LangBtn lang={lang} setLang={l=>{setLang(l);localStorage.setItem("pf_lang",l);}}/>
           {session.role==="admin"&&<Btn onClick={()=>setShowPricingModal(true)} variant="ghost" style={{padding:"3px 9px",fontSize:11}}>💰</Btn>}
-          <span style={{background:"#B8924A22",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700}}>{session.role==="owner"?"👑":session.role==="admin"?"⚙️":session.role==="installer"?"🔨":"💼"} {session.name}</span>
+          <span style={{background:vTheme.accent+"22",color:vTheme.accent,border:`1px solid ${vTheme.accent}44`,borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700}}>{session.role==="owner"?"👑":session.role==="admin"?"⚙️":session.role==="installer"?"🔨":"💼"} {session.name}</span>
           {view==="detail"&&<Btn onClick={()=>setView("main")} variant="ghost" style={{padding:"3px 9px",fontSize:11}}>{t.back2}</Btn>}
           <button onClick={logout} style={{background:"none",border:"none",color:"#555",fontSize:18,cursor:"pointer"}}>↩</button>
         </div>
@@ -1280,4 +1397,3 @@ export default function App() {
     </div>
   );
 }
-  
