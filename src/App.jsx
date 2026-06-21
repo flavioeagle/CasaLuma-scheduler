@@ -77,7 +77,7 @@ const L = {
     roles:{owner:"👑 Owner",admin:"⚙️ Admin",installer:"🔨 Instalador",salesperson:"💼 Vendedor"},
     roleSubs:{owner:"Acesso total à plataforma",admin:"Gerenciar minha empresa",installer:"Ver meus jobs",salesperson:"Meus clientes e jobs"},
     yourName:"Seu nome",selectName:"Selecione...",password:"Senha",enter:"Entrar",back:"← Voltar",verifying:"Verificando...",wrongPw:"Senha incorreta.",wrongCreds:"Nome ou senha incorretos.",selectNameErr:"Selecione seu nome.",enterPwErr:"Digite sua senha.",
-    nav:{jobs:"Jobs",calendar:"Calendário",companies:"Empresas",contacts:"Contatos",reports:"Relatórios",team:"Equipe"},
+    nav:{jobs:"Jobs",calendar:"Calendário",companies:"Empresas",contacts:"Contatos",reports:"Relatórios",team:"Equipe",quote:"Orçamento"},
     jobStatus:{scheduled:"Agendado",in_progress:"Em Andamento",completed:"Concluído",cancelled:"Cancelado"},
     all:"Todos",newJob:"+ Novo Job",editJob:"Editar Job",noJobs:"Nenhum job encontrado",loading:"Carregando...",
     back2:"← Voltar",save:"Salvar",cancel:"Cancelar",saving:"Salvando...",add:"+ Adicionar",remove:"Remover",edit:"✏️",del:"🗑️",
@@ -102,7 +102,7 @@ const L = {
     roles:{owner:"👑 Owner",admin:"⚙️ Admin",installer:"🔨 Installer",salesperson:"💼 Salesperson"},
     roleSubs:{owner:"Full platform access",admin:"Manage my company",installer:"View my jobs",salesperson:"My clients & jobs"},
     yourName:"Your name",selectName:"Select...",password:"Password",enter:"Sign In",back:"← Back",verifying:"Verifying...",wrongPw:"Incorrect password.",wrongCreds:"Wrong name or password.",selectNameErr:"Select your name.",enterPwErr:"Enter password.",
-    nav:{jobs:"Jobs",calendar:"Calendar",companies:"Companies",contacts:"Contacts",reports:"Reports",team:"Team"},
+    nav:{jobs:"Jobs",calendar:"Calendar",companies:"Companies",contacts:"Contacts",reports:"Reports",team:"Team",quote:"Quote"},
     jobStatus:{scheduled:"Scheduled",in_progress:"In Progress",completed:"Completed",cancelled:"Cancelled"},
     all:"All",newJob:"+ New Job",editJob:"Edit Job",noJobs:"No jobs found",loading:"Loading...",
     back2:"← Back",save:"Save",cancel:"Cancel",saving:"Saving...",add:"+ Add",remove:"Remove",edit:"✏️",del:"🗑️",
@@ -127,7 +127,7 @@ const L = {
     roles:{owner:"👑 Propietario",admin:"⚙️ Admin",installer:"🔨 Instalador",salesperson:"💼 Vendedor"},
     roleSubs:{owner:"Acceso total a la plataforma",admin:"Gestionar mi empresa",installer:"Ver mis trabajos",salesperson:"Mis clientes y trabajos"},
     yourName:"Tu nombre",selectName:"Seleccionar...",password:"Contraseña",enter:"Entrar",back:"← Volver",verifying:"Verificando...",wrongPw:"Contraseña incorrecta.",wrongCreds:"Nombre o contraseña incorrectos.",selectNameErr:"Selecciona tu nombre.",enterPwErr:"Ingresa contraseña.",
-    nav:{jobs:"Trabajos",calendar:"Calendario",companies:"Empresas",contacts:"Contactos",reports:"Reportes",team:"Equipo"},
+    nav:{jobs:"Trabajos",calendar:"Calendario",companies:"Empresas",contacts:"Contactos",reports:"Reportes",team:"Equipo",quote:"Presupuesto"},
     jobStatus:{scheduled:"Programado",in_progress:"En Progreso",completed:"Completado",cancelled:"Cancelado"},
     all:"Todos",newJob:"+ Nuevo",editJob:"Editar",noJobs:"Sin trabajos",loading:"Cargando...",
     back2:"← Volver",save:"Guardar",cancel:"Cancelar",saving:"Guardando...",add:"+ Agregar",remove:"Eliminar",edit:"✏️",del:"🗑️",
@@ -296,7 +296,7 @@ function JobDetail({job,session,t,onUpdateStatus,onAddPhoto,onDeletePhoto,onSave
       {/* Address */}
       <Card style={{marginBottom:12}}>
         <Sec>📍 {t.fields.address}</Sec>
-        <div style={{fontSize:15,fontWeight:700,color:"#1A1A1A",marginBottom:8}}>{job.address}</div>
+        <a href={`https://maps.google.com/?q=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer" style={{fontSize:15,fontWeight:700,color:"#2563EB",marginBottom:8,display:"block",textDecoration:"none"}}>📍 {job.address} ↗</a>
         {job.access_notes&&<div style={{background:"#FFFBF5",border:"1px solid #B8924A44",borderRadius:8,padding:12,fontSize:14,color:"#555",lineHeight:1.7}}><span style={{fontSize:11,fontWeight:800,color:"#B8924A",display:"block",marginBottom:4}}>ACCESS</span>{job.access_notes}</div>}
       </Card>
 
@@ -553,6 +553,305 @@ function Reports({session,t,showToast}) {
   );
 }
 
+// ─── QUOTE / CALCULATOR ───────────────────────────────────────────────
+const DEFAULT_RATES = {
+  material: { costPadrao: 37, costPremium: 60 },
+  builderTiers: {
+    starter:   { label: "Starter (novo)", precoPadrao: 54, precoPremium: 86 },
+    builder:   { label: "Builder",        precoPadrao: 50, precoPremium: 80 },
+    volume:    { label: "Volume",         precoPadrao: 46, precoPremium: 74 },
+    strategic: { label: "Strategic",      precoPadrao: 43, precoPremium: 68 },
+  },
+  retailCategories: {
+    granitoPadrao:  { label: "Granito padrão",        preco: 77,  custo: 37 },
+    quartzoEntrada: { label: "Quartzo entrada/médio",  preco: 86,  custo: 37 },
+    granitoPremium: { label: "Granito premium",        preco: 143, custo: 60 },
+    quartzoPremium: { label: "Quartzo premium",        preco: 163, custo: 60 },
+    quartzito:      { label: "Quartzito natural",      preco: 183, custo: 60 },
+    marmore:        { label: "Mármore",                preco: 163, custo: 60 },
+    exotica:        { label: "Pedra exótica",           preco: 220, custo: 95 },
+    exclusiva:      { label: "Pedra exclusiva/rara",    preco: 280, custo: 130 },
+  },
+  instalacao: { custo: 6, preco: 12 },
+  cutout: { custo: 90, preco: 150 },
+  furoExtra: { custo: 25, preco: 55 },
+  bordaPremium: { custo: 12, preco: 38 },
+  waterfall: { custo: 500, preco: 1200 },
+  comissaoPercent: 8,
+};
+const RATES_KEY = "Owner__quote_rates_v1";
+
+function qfmt(n) { if (Number.isNaN(n)) return "$0"; return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function qnum(v) { const n = parseFloat(v); return Number.isNaN(n) ? 0 : n; }
+
+function QNumberField({ label, value, onChange, prefix = "$", small }) {
+  return (
+    <label style={{display:"flex",flexDirection:"column",gap:4}}>
+      <span style={{color:"#78716C",fontSize:small?11:12,fontWeight:600}}>{label}</span>
+      <div style={{display:"flex",alignItems:"center",gap:4,background:"#fff",border:"1px solid #D6D3D1",borderRadius:8,padding:"7px 10px"}}>
+        {prefix && <span style={{color:"#A8A29E",fontSize:14}}>{prefix}</span>}
+        <input type="number" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} style={{width:"100%",outline:"none",color:"#1c1917",fontSize:14,background:"transparent",border:"none"}}/>
+      </div>
+    </label>
+  );
+}
+function QSection({ title, children }) {
+  return (
+    <div style={{background:"#fff",borderRadius:12,border:"1px solid #E7E5E4",padding:16,marginBottom:14}}>
+      <h3 style={{fontSize:12,fontWeight:700,color:"#292524",marginBottom:10,letterSpacing:0.5,textTransform:"uppercase"}}>{title}</h3>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>{children}</div>
+    </div>
+  );
+}
+
+function QuoteTab({ session, t, showToast }) {
+  const [rates,setRates]=useState(DEFAULT_RATES); const [loadState,setLoadState]=useState("loading");
+  const [saveState,setSaveState]=useState("idle"); const [qtab,setQtab]=useState("orcamento");
+  const isOwner = session.role==="owner";
+
+  useEffect(()=>{ (async()=>{
+    try{
+      const { data } = await db.from("pricing_config").select("*").eq("company","__quote_rates__").single();
+      if(data && data.items){ setRates({...DEFAULT_RATES, ...JSON.parse(data.items)}); }
+      setLoadState("ready");
+    }catch{ setLoadState("ready"); }
+  })(); },[]);
+
+  const saveRates = async (next) => {
+    setRates(next); setSaveState("saving");
+    try{
+      const {data:ex}=await db.from("pricing_config").select("id").eq("company","__quote_rates__").single();
+      if(ex){ await db.from("pricing_config").update({items:JSON.stringify(next)}).eq("company","__quote_rates__"); }
+      else{ await db.from("pricing_config").insert([{company:"__quote_rates__",base_sf:0,items:JSON.stringify(next)}]); }
+      setSaveState("saved"); showToast(t.toasts.saved); setTimeout(()=>setSaveState("idle"),1500);
+    }catch{ setSaveState("idle"); showToast(t.toasts.errSave,"error"); }
+  };
+
+  if(loadState==="loading") return <div style={{textAlign:"center",padding:40,color:"#B8924A"}}>⏳</div>;
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
+        <div style={{fontSize:20,fontWeight:800,color:"#1A1A1A"}}>💰 {t.nav.quote}</div>
+        {isOwner && (
+          <div style={{display:"flex",background:"#1A1A1A",borderRadius:20,padding:3,gap:2}}>
+            <button onClick={()=>setQtab("orcamento")} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:qtab==="orcamento"?"#B8924A":"transparent",color:qtab==="orcamento"?"#fff":"#999"}}>🧮 Orçamento</button>
+            <button onClick={()=>setQtab("config")} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:qtab==="config"?"#B8924A":"transparent",color:qtab==="config"?"#fff":"#999"}}>⚙️ Tabela</button>
+          </div>
+        )}
+      </div>
+      {qtab==="orcamento"||!isOwner ? <QuoteCalculator rates={rates}/> : <QuoteConfig rates={rates} onSave={saveRates} saveState={saveState}/>}
+    </div>
+  );
+}
+
+function QuoteCalculator({ rates }) {
+  const [saleType,setSaleType]=useState("builder"); const [tier,setTier]=useState("builder");
+  const [grade,setGrade]=useState("padrao"); const [category,setCategory]=useState("granitoPadrao");
+  const [sf,setSf]=useState(35);
+  const [materialPrice,setMaterialPrice]=useState(rates.builderTiers.builder.precoPadrao);
+  const materialCost = saleType==="builder" ? (grade==="padrao"?rates.material.costPadrao:rates.material.costPremium) : rates.retailCategories[category].custo;
+  const [installPrice,setInstallPrice]=useState(rates.instalacao.preco); const installCost=rates.instalacao.custo;
+  const [cutoutQty,setCutoutQty]=useState(1); const [cutoutPrice,setCutoutPrice]=useState(rates.cutout.preco); const cutoutCost=rates.cutout.custo;
+  const [furoQty,setFuroQty]=useState(0); const [furoPrice,setFuroPrice]=useState(rates.furoExtra.preco); const furoCost=rates.furoExtra.custo;
+  const [bordaFt,setBordaFt]=useState(0); const [bordaPrice,setBordaPrice]=useState(rates.bordaPremium.preco); const bordaCost=rates.bordaPremium.custo;
+  const [waterfallQty,setWaterfallQty]=useState(0); const [waterfallPrice,setWaterfallPrice]=useState(rates.waterfall.preco); const waterfallCost=rates.waterfall.custo;
+  const [applyCommission,setApplyCommission]=useState(true); const [commissionPct,setCommissionPct]=useState(rates.comissaoPercent);
+  const [clientMode,setClientMode]=useState(false);
+
+  useEffect(()=>{
+    if(saleType==="builder"){ setMaterialPrice(grade==="padrao"?rates.builderTiers[tier].precoPadrao:rates.builderTiers[tier].precoPremium); }
+    else{ setMaterialPrice(rates.retailCategories[category].preco); }
+    // eslint-disable-next-line
+  },[saleType,tier,grade,category,rates]);
+
+  const lines=[
+    { label: saleType==="builder" ? `Material + fabricação (${rates.builderTiers[tier].label}, ${grade==="padrao"?"padrão":"premium"})` : `Material + fabricação (${rates.retailCategories[category].label})`, qty:sf, unit:"SF", cost:materialCost, price:materialPrice },
+    { label:"Instalação", qty:sf, unit:"SF", cost:installCost, price:installPrice },
+  ];
+  if(cutoutQty>0) lines.push({label:"Cutout (pia/cooktop)",qty:cutoutQty,unit:"un",cost:cutoutCost,price:cutoutPrice});
+  if(furoQty>0) lines.push({label:"Furo extra",qty:furoQty,unit:"un",cost:furoCost,price:furoPrice});
+  if(bordaFt>0) lines.push({label:"Acabamento borda premium",qty:bordaFt,unit:"pé",cost:bordaCost,price:bordaPrice});
+  if(waterfallQty>0) lines.push({label:"Waterfall edge",qty:waterfallQty,unit:"painel",cost:waterfallCost,price:waterfallPrice});
+
+  const totalCost=lines.reduce((s,l)=>s+l.qty*l.cost,0);
+  const totalPrice=lines.reduce((s,l)=>s+l.qty*l.price,0);
+  const grossMargin=totalPrice-totalCost;
+  const grossMarginPct=totalPrice>0?(grossMargin/totalPrice)*100:0;
+  const commission=applyCommission?(totalPrice*commissionPct)/100:0;
+  const netProfit=grossMargin-commission;
+  const netProfitPct=totalPrice>0?(netProfit/totalPrice)*100:0;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{background:"#fff",borderRadius:12,border:"1px solid #E7E5E4",padding:16}}>
+        <span style={{fontSize:11,fontWeight:700,color:"#78716C",textTransform:"uppercase",letterSpacing:0.5}}>Tipo de venda</span>
+        <div style={{display:"flex",gap:8,marginTop:8}}>
+          {[{id:"builder",label:"Builder"},{id:"retail",label:"Cliente final"}].map(opt=>(
+            <button key={opt.id} onClick={()=>setSaleType(opt.id)} style={{flex:1,padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",border:`1px solid ${saleType===opt.id?"#1A1A1A":"#E7E5E4"}`,background:saleType===opt.id?"#1A1A1A":"#FAFAF9",color:saleType===opt.id?"#fff":"#57534E"}}>{opt.label}</button>
+          ))}
+        </div>
+        {saleType==="builder" ? (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:12}}>
+            <Select label="Tier" value={tier} onChange={setTier} options={Object.entries(rates.builderTiers).map(([id,tt])=>({value:id,label:tt.label}))}/>
+            <Select label="Material" value={grade} onChange={setGrade} options={[{value:"padrao",label:"Padrão"},{value:"premium",label:"Premium"}]}/>
+          </div>
+        ):(
+          <div style={{marginTop:12}}>
+            <Select label="Categoria" value={category} onChange={setCategory} options={Object.entries(rates.retailCategories).map(([id,c])=>({value:id,label:c.label}))}/>
+          </div>
+        )}
+      </div>
+
+      <div style={{background:"#fff",borderRadius:12,border:"1px solid #E7E5E4",padding:16}}>
+        <span style={{fontSize:11,fontWeight:700,color:"#78716C",textTransform:"uppercase",letterSpacing:0.5}}>Job</span>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginTop:10}}>
+          <QNumberField label="Metragem (SF)" value={sf} onChange={v=>setSf(qnum(v))} prefix=""/>
+          <QNumberField label="Preço material/SF" value={materialPrice} onChange={v=>setMaterialPrice(qnum(v))}/>
+          <QNumberField label="Preço instalação/SF" value={installPrice} onChange={v=>setInstallPrice(qnum(v))}/>
+          <QNumberField label="Cutouts (qtd)" value={cutoutQty} onChange={v=>setCutoutQty(qnum(v))} prefix=""/>
+          <QNumberField label="Preço/cutout" value={cutoutPrice} onChange={v=>setCutoutPrice(qnum(v))}/>
+          <QNumberField label="Furos extras (qtd)" value={furoQty} onChange={v=>setFuroQty(qnum(v))} prefix=""/>
+          <QNumberField label="Preço/furo extra" value={furoPrice} onChange={v=>setFuroPrice(qnum(v))}/>
+          <QNumberField label="Borda premium (pés)" value={bordaFt} onChange={v=>setBordaFt(qnum(v))} prefix=""/>
+          <QNumberField label="Preço/pé borda" value={bordaPrice} onChange={v=>setBordaPrice(qnum(v))}/>
+          <QNumberField label="Waterfall (painéis)" value={waterfallQty} onChange={v=>setWaterfallQty(qnum(v))} prefix=""/>
+          <QNumberField label="Preço/painel" value={waterfallPrice} onChange={v=>setWaterfallPrice(qnum(v))}/>
+        </div>
+      </div>
+
+      <div style={{background:"#fff",borderRadius:12,border:"1px solid #E7E5E4",padding:16,display:"flex",flexDirection:"column",gap:12}}>
+        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}>
+          <input type="checkbox" checked={applyCommission} onChange={e=>setApplyCommission(e.target.checked)} style={{width:16,height:16,accentColor:"#B8924A"}}/>
+          Comissão de vendedor
+          {applyCommission && <input type="number" value={commissionPct} onChange={e=>setCommissionPct(qnum(e.target.value))} style={{width:56,border:"1px solid #D6D3D1",borderRadius:6,padding:"3px 6px",fontSize:13,marginLeft:4}}/>}
+          {applyCommission && <span style={{color:"#A8A29E"}}>%</span>}
+        </label>
+        <button onClick={()=>setClientMode(v=>!v)} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,padding:"8px 14px",borderRadius:8,border:"1px solid #D6D3D1",background:"#FAFAF9",cursor:"pointer",alignSelf:"flex-start"}}>
+          {clientMode?"🙈":"👁️"} {clientMode?"Modo cliente (ativo)":"Mostrar modo cliente"}
+        </button>
+      </div>
+
+      <div style={{background:"#1A1A1A",borderRadius:12,padding:16,color:"#fff"}}>
+        <h3 style={{fontSize:11,textTransform:"uppercase",letterSpacing:0.5,color:"#999",marginBottom:10}}>{clientMode?"Orçamento":"Resultado interno"}</h3>
+        <div>
+          {lines.map((l,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",fontSize:13,borderBottom:i<lines.length-1?"1px solid #333":"none"}}>
+              <div style={{color:"#ccc"}}>{l.label} <span style={{color:"#777"}}>· {l.qty} {l.unit}</span></div>
+              <div style={{display:"flex",gap:14,alignItems:"center"}}>
+                {!clientMode && <span style={{color:"#888",fontSize:11,width:64,textAlign:"right"}}>custo {qfmt(l.cost*l.qty)}</span>}
+                <span style={{fontWeight:700,width:80,textAlign:"right"}}>{qfmt(l.price*l.qty)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:14,paddingTop:12,borderTop:"1px solid #333",display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+            <span style={{color:"#ccc",fontSize:13}}>Preço total ao cliente</span>
+            <span style={{fontSize:26,fontWeight:900,color:"#B8924A"}}>{qfmt(totalPrice)}</span>
+          </div>
+          {!clientMode && (<>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:"#999"}}><span>Custo total</span><span>{qfmt(totalCost)}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}><span style={{color:"#ccc"}}>Margem bruta</span><span style={{color:"#4ADE80",fontWeight:700}}>{qfmt(grossMargin)} ({grossMarginPct.toFixed(1)}%)</span></div>
+            {applyCommission && <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:"#999"}}><span>Comissão vendedor ({commissionPct}%)</span><span>−{qfmt(commission)}</span></div>}
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,paddingTop:6,borderTop:"1px solid #2a2a2a"}}><span style={{color:"#eee",fontWeight:600}}>Lucro líquido</span><span style={{color:"#6EE7B7",fontWeight:800}}>{qfmt(netProfit)} ({netProfitPct.toFixed(1)}%)</span></div>
+          </>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuoteConfig({ rates, onSave, saveState }) {
+  const [draft,setDraft]=useState(rates);
+  useEffect(()=>setDraft(rates),[rates]);
+  const set=(path,value)=>{ setDraft(prev=>{ const next=structuredClone(prev); let obj=next; for(let i=0;i<path.length-1;i++) obj=obj[path[i]]; obj[path[path.length-1]]=value; return next; }); };
+  const addRetailCategory=()=>{
+    const id="custom_"+Date.now();
+    setDraft(prev=>({...prev, retailCategories:{...prev.retailCategories,[id]:{label:"Nova categoria",preco:200,custo:90}}}));
+  };
+  const removeRetailCategory=(id)=>{ setDraft(prev=>{ const next={...prev}; const rc={...next.retailCategories}; delete rc[id]; next.retailCategories=rc; return next; }); };
+
+  return (
+    <div>
+      <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",color:"#92400E",fontSize:12,borderRadius:8,padding:"10px 12px",marginBottom:16}}>
+        ⚠️ Esses valores ficam salvos para todos com acesso ao Profield — inclusive seus vendedores ao usar o orçamento. Ajuste com cuidado.
+      </div>
+
+      <QSection title="Custo do material (parceria MC)">
+        <QNumberField label="Padrão $/SF" value={draft.material.costPadrao} onChange={v=>set(["material","costPadrao"],qnum(v))}/>
+        <QNumberField label="Premium $/SF" value={draft.material.costPremium} onChange={v=>set(["material","costPremium"],qnum(v))}/>
+      </QSection>
+
+      <QSection title="Instalação">
+        <QNumberField label="Custo $/SF" value={draft.instalacao.custo} onChange={v=>set(["instalacao","custo"],qnum(v))}/>
+        <QNumberField label="Preço $/SF" value={draft.instalacao.preco} onChange={v=>set(["instalacao","preco"],qnum(v))}/>
+      </QSection>
+
+      <QSection title="Cutout">
+        <QNumberField label="Custo" value={draft.cutout.custo} onChange={v=>set(["cutout","custo"],qnum(v))}/>
+        <QNumberField label="Preço mínimo" value={draft.cutout.preco} onChange={v=>set(["cutout","preco"],qnum(v))}/>
+      </QSection>
+
+      <QSection title="Furo extra">
+        <QNumberField label="Custo" value={draft.furoExtra.custo} onChange={v=>set(["furoExtra","custo"],qnum(v))}/>
+        <QNumberField label="Preço" value={draft.furoExtra.preco} onChange={v=>set(["furoExtra","preco"],qnum(v))}/>
+      </QSection>
+
+      <QSection title="Borda premium (por pé linear)">
+        <QNumberField label="Custo" value={draft.bordaPremium.custo} onChange={v=>set(["bordaPremium","custo"],qnum(v))}/>
+        <QNumberField label="Preço" value={draft.bordaPremium.preco} onChange={v=>set(["bordaPremium","preco"],qnum(v))}/>
+      </QSection>
+
+      <QSection title="Waterfall edge (por painel)">
+        <QNumberField label="Custo" value={draft.waterfall.custo} onChange={v=>set(["waterfall","custo"],qnum(v))}/>
+        <QNumberField label="Preço" value={draft.waterfall.preco} onChange={v=>set(["waterfall","preco"],qnum(v))}/>
+      </QSection>
+
+      <QSection title="Comissão de vendedor">
+        <QNumberField label="% padrão" value={draft.comissaoPercent} onChange={v=>set(["comissaoPercent"],qnum(v))} prefix=""/>
+      </QSection>
+
+      <div style={{background:"#fff",borderRadius:12,border:"1px solid #E7E5E4",padding:16,marginBottom:14}}>
+        <h3 style={{fontSize:12,fontWeight:700,color:"#292524",marginBottom:10,letterSpacing:0.5,textTransform:"uppercase"}}>Tiers Builder ($/SF — só material)</h3>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {Object.entries(draft.builderTiers).map(([id,tt])=>(
+            <div key={id} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,alignItems:"end"}}>
+              <span style={{fontSize:13,color:"#57534E",fontWeight:600}}>{tt.label}</span>
+              <QNumberField label="Padrão" value={tt.precoPadrao} onChange={v=>set(["builderTiers",id,"precoPadrao"],qnum(v))} small/>
+              <QNumberField label="Premium" value={tt.precoPremium} onChange={v=>set(["builderTiers",id,"precoPremium"],qnum(v))} small/>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{background:"#fff",borderRadius:12,border:"1px solid #E7E5E4",padding:16,marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <h3 style={{fontSize:12,fontWeight:700,color:"#292524",letterSpacing:0.5,textTransform:"uppercase"}}>Categorias cliente final ($/SF) — inclui exóticas e exclusivas</h3>
+          <button onClick={addRetailCategory} style={{background:"#B8924A18",color:"#B8924A",border:"1px solid #B8924A44",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Categoria</button>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {Object.entries(draft.retailCategories).map(([id,c])=>(
+            <div key={id} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto",gap:10,alignItems:"end"}}>
+              {id.startsWith("custom_")||id==="exotica"||id==="exclusiva"
+                ? <input value={c.label} onChange={e=>set(["retailCategories",id,"label"],e.target.value)} style={{fontSize:13,color:"#1c1917",fontWeight:600,border:"1px solid #D6D3D1",borderRadius:8,padding:"7px 10px",background:"#fff"}}/>
+                : <span style={{fontSize:13,color:"#57534E",fontWeight:600}}>{c.label}</span>
+              }
+              <QNumberField label="Custo" value={c.custo} onChange={v=>set(["retailCategories",id,"custo"],qnum(v))} small/>
+              <QNumberField label="Preço" value={c.preco} onChange={v=>set(["retailCategories",id,"preco"],qnum(v))} small/>
+              {id.startsWith("custom_") && <button onClick={()=>removeRetailCategory(id)} style={{background:"#FEF2F2",color:"#DC2626",border:"1px solid #DC262633",borderRadius:8,padding:"7px 10px",fontSize:12,cursor:"pointer",fontWeight:700}}>🗑️</button>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={()=>onSave(draft)} disabled={saveState==="saving"} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#B8924A",color:"#fff",fontWeight:700,padding:"12px 0",borderRadius:10,border:"none",cursor:"pointer",fontSize:14}}>
+        {saveState==="saving"?"⏳ Salvando...":saveState==="saved"?"✅ Salvo!":"💾 Salvar tabela"}
+      </button>
+    </div>
+  );
+}
+
 // ─── COMPANIES TAB ────────────────────────────────────────────────────
 function CompaniesTab({t,showToast,allJobs,allInstallers,session}) {
   const [admins,setAdmins]=useState([]); const [selected,setSelected]=useState(null); const [cTab,setCTab]=useState("jobs");
@@ -646,7 +945,7 @@ function CompaniesTab({t,showToast,allJobs,allInstallers,session}) {
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span><Badge status={job.status} label={t.jobStatus[job.status]||job.status}/>{job.sf&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.sf} SF</span>}</div>
                     <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
                     {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
-                    <div style={{fontSize:13,color:"#666",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
+                    <a href={`https://maps.google.com/?q=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{fontSize:13,color:"#2563EB",display:"block",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textDecoration:"none"}}>📍 {job.address} ↗</a>
                     <div style={{fontSize:12,color:"#999",marginTop:4}}>📅 {fmt(job.date)} · 👷 {job.installer||"—"}</div>
                   </div>
                   <div style={{display:"flex",gap:6,flexShrink:0}}>
@@ -788,7 +1087,7 @@ function Calendar({jobs,onSelectJob,t,lang}) {
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{fontSize:11,fontWeight:800,color:"#B8924A"}}>{job.work_order}</span><Badge status={job.status} label={t.jobStatus[job.status]||job.status}/>{job.sf&&<span style={{fontSize:11,background:"#1A1A1A",color:"#B8924A",borderRadius:10,padding:"2px 8px",fontWeight:700}}>{job.sf} SF</span>}</div>
               <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
               {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
-              <div style={{fontSize:13,color:"#666",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
+              <a href={`https://maps.google.com/?q=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{fontSize:13,color:"#2563EB",display:"block",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textDecoration:"none"}}>📍 {job.address} ↗</a>
               <div style={{fontSize:12,color:"#999",marginTop:4}}>🕐 {job.time} · 👷 {job.installer||"—"}</div>
             </Card>
           ))}
@@ -885,6 +1184,7 @@ export default function App() {
   const tabs=[
     {id:"list",icon:"📋",label:t.nav.jobs},
     {id:"calendar",icon:"📅",label:t.nav.calendar},
+    ...(session?.role==="owner"||session?.role==="admin"||session?.role==="salesperson"?[{id:"quote",icon:"💰",label:t.nav.quote}]:[]),
     ...(session?.role==="owner"?[{id:"companies",icon:"🏢",label:t.nav.companies}]:[]),
     ...(isAdmin?[{id:"contacts",icon:"📇",label:t.nav.contacts},{id:"team",icon:"👥",label:t.nav.team},{id:"reports",icon:"📊",label:t.nav.reports}]:[]),
     ...(session?.role==="installer"||session?.role==="salesperson"?[{id:"reports",icon:"📊",label:t.nav.reports}]:[]),
@@ -940,7 +1240,7 @@ export default function App() {
                               <div style={{fontSize:15,fontWeight:800,color:"#1A1A1A",marginBottom:2}}>{job.client}</div>
                               {job.builder&&<div style={{fontSize:12,color:"#B8924A",fontWeight:600,marginBottom:2}}>💰 {job.builder}</div>}
                               {job.builder_note&&job.builder_note!=="—"&&<div style={{fontSize:11,color:"#F59E0B",marginBottom:2}}>⚠️ {job.builder_note}</div>}
-                              <div style={{fontSize:13,color:"#666",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>📍 {job.address}</div>
+                              <a href={`https://maps.google.com/?q=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{fontSize:13,color:"#2563EB",marginBottom:4,display:"block",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textDecoration:"none"}}>📍 {job.address} ↗</a>
                               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}><span style={{fontSize:12,color:"#999"}}>📅 {fmt(job.date)} {job.time}</span><span style={{fontSize:12,color:"#999"}}>🔧 {job.service}</span>{job.installer&&<span style={{fontSize:12,color:"#999"}}>👷 {job.installer}</span>}</div>
                               <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}>
                                 {job.client_phone&&<span style={{fontSize:11,color:"#2563EB",background:"#EFF6FF",borderRadius:10,padding:"2px 8px",fontWeight:600}}>📞</span>}
@@ -958,6 +1258,7 @@ export default function App() {
               </>
             )}
             {tab==="calendar"&&<Calendar jobs={jobs} onSelectJob={openJob} t={t} lang={lang}/>}
+            {tab==="quote"&&(session.role==="owner"||session.role==="admin"||session.role==="salesperson")&&<QuoteTab session={session} t={t} showToast={showToast}/>}
             {tab==="companies"&&session.role==="owner"&&<CompaniesTab t={t} showToast={showToast} allJobs={jobs} allInstallers={allInstallers} session={session}/>}
             {tab==="contacts"&&isAdmin&&<ContactsTab session={session} t={t} showToast={showToast}/>}
             {tab==="team"&&isAdmin&&<TeamManager session={session} t={t} showToast={showToast}/>}
